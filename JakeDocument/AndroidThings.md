@@ -192,58 +192,59 @@
 
     * 使用
 
-    	```java
-    public class MainActivity extends Activity {
+      ```java
+      public class MainActivity extends Activity {
+      
+      @Override
+      protected void onCreate(Bundle savedInstanceState) {
+      	if(savedInstanceState!=null){ //判断是否有以前的保存状态信息
+      		 savedInstanceState.get("Key"); 
+      		 }
+      	super.onCreate(savedInstanceState);
+      	setContentView(R.layout.activity_main);
+      }
+       @Override
+      protected void onSaveInstanceState(Bundle outState) {
+      // TODO Auto-generated method stub
+       //可能被回收内存前保存状态和信息，
+         Bundle data = new Bundle(); 
+         data.putString("key", "last words before be kill");
+         outState.putAll(data);
+      super.onSaveInstanceState(outState);
+      }
+       @Override
+      protected void onRestoreInstanceState(Bundle savedInstanceState) {
+      // TODO Auto-generated method stub
+         if(savedInstanceState!=null){ //判断是否有以前的保存状态信息
+      		 savedInstanceState.get("Key"); 
+      		 }
+      super.onRestoreInstanceState(savedInstanceState);
+      }
+      }
+      ```
+
     
-    	@Override
-    	protected void onCreate(Bundle savedInstanceState) {
-    		if(savedInstanceState!=null){ //判断是否有以前的保存状态信息
-    			 savedInstanceState.get("Key"); 
-    			 }
-    		super.onCreate(savedInstanceState);
-    		setContentView(R.layout.activity_main);
-    	}
-       @Override
-    protected void onSaveInstanceState(Bundle outState) {
-    	// TODO Auto-generated method stub
-    	 //可能被回收内存前保存状态和信息，
-    	   Bundle data = new Bundle(); 
-    	   data.putString("key", "last words before be kill");
-    	   outState.putAll(data);
-    	super.onSaveInstanceState(outState);
-    }
-       @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-    	// TODO Auto-generated method stub
-    	   if(savedInstanceState!=null){ //判断是否有以前的保存状态信息
-    			 savedInstanceState.get("Key"); 
-    			 }
-    	super.onRestoreInstanceState(savedInstanceState);
-    }
-    }
-    ```
 
 
 
-> Activity 在manifest 标签中的一些注意点
+* **Activity 在manifest 标签中的一些注意点**
+    * taskAffinity
 
-* taskAffinity
+        在 singleTask 启动模式中，多次提到某个 Activity 所需的任务栈，什么是 Activity  所需要的任务栈呢？这就要从一个参数说起：taskAffinity，任务相关性。这个参数标识了一个 Activity  所需要的任务栈的名字，默认情况下，所有 Activity 所需的任务栈的名字为应用的包名。当然，我们可以为每个 Activity 都单独指定  taskAffinity 属性，这个属性值必须不能和包名相同，否则相当于没有设置。taskAffinity 属性主要和 singleTask  启动模式和 allowTaskReparentiong 属性配对使用，在其他情况下没有意义。
 
-    在 singleTask 启动模式中，多次提到某个 Activity 所需的任务栈，什么是 Activity  所需要的任务栈呢？这就要从一个参数说起：taskAffinity，任务相关性。这个参数标识了一个 Activity  所需要的任务栈的名字，默认情况下，所有 Activity 所需的任务栈的名字为应用的包名。当然，我们可以为每个 Activity 都单独指定  taskAffinity 属性，这个属性值必须不能和包名相同，否则相当于没有设置。taskAffinity 属性主要和 singleTask  启动模式和 allowTaskReparentiong 属性配对使用，在其他情况下没有意义。
+        **taskAffinity 与 singleTask 配对使用：**
 
-    **taskAffinity 与 singleTask 配对使用：**
+        如果启动了设置了这两个属性的 Activity，这个 Activity 就会在 taskAffinity 设置的任务栈中。
 
-    如果启动了设置了这两个属性的 Activity，这个 Activity 就会在 taskAffinity 设置的任务栈中。
+        **taskAffinity 与 allowTaskReparenting 配对使用：**
 
-    **taskAffinity 与 allowTaskReparenting 配对使用：**
+        当一个应用 A 启动了应用 B 的某个 Activity 后，如果这个 Activity 的 allowTaskReparenting  属性为 true 的话，那么当应用 B 被启动后，此 Activity 会直接从应用 A 的任务栈转移到应用 B  的任务栈中。这个属性主要作用就是将这个 Activity  转移到它所属的任务栈中，例如一个短信应用收到一个带有网络链接的短信，点击链接会跳到浏览器，这时候如果 allowTaskReparenting  设置为 true 的话，打开浏览器应用就会直接显示刚才打开的网页页面，而打开短信应用后这个浏览器界面就会消失。
 
-    当一个应用 A 启动了应用 B 的某个 Activity 后，如果这个 Activity 的 allowTaskReparenting  属性为 true 的话，那么当应用 B 被启动后，此 Activity 会直接从应用 A 的任务栈转移到应用 B  的任务栈中。这个属性主要作用就是将这个 Activity  转移到它所属的任务栈中，例如一个短信应用收到一个带有网络链接的短信，点击链接会跳到浏览器，这时候如果 allowTaskReparenting  设置为 true 的话，打开浏览器应用就会直接显示刚才打开的网页页面，而打开短信应用后这个浏览器界面就会消失。
+        启动模式了解之后，那是如何指定启动模式的方式呢？
 
-    启动模式了解之后，那是如何指定启动模式的方式呢？
+        有两种：一种是在 AndroidMenifet 文件设置 launchMode 属性，一种是给 Intent 设置 Flag。
 
-    有两种：一种是在 AndroidMenifet 文件设置 launchMode 属性，一种是给 Intent 设置 Flag。
-
-    如果两者都存在，后者优先级更高。
+        如果两者都存在，后者优先级更高。
 
 
 
