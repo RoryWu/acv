@@ -1,0 +1,7 @@
+**Android 实现周期性任务(倒计时)的方法：**
+
+- handler + postDelayed
+- Timer + timerTask+ handler
+- ScheduledExecutorService + handler 
+- Rxjava
+- CountDownTimer
