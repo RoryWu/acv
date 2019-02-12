@@ -82,11 +82,168 @@
 
 #### 5.1.1 四大组件之Activity
 
-> 理解Activity
+* **理解Activity**
 
-> Activity 的生命周期
+    activity是独立平等的，用来处理用户操作。几乎所有的activity都是用来和用户交互的，所以activity类会创建了一个窗口，开发者可以通过setContentView(View)的接口把UI放到给窗口上。
 
-> Activity 的启动模式
+
+
+* **重要方法**
+
+    1. onConfigurationChanged
+
+        前面说过，当 Activity 横竖屏切换的时候会导致 Activity 销毁并重建，哪有什么方法能避免呢？其实可以在  AndroidManifest 里面指定 android:configChanges="orientation/screenSize"  来避免重建，这时就会调用 onConfigurationChanged 方法。
+
+        如果按上面的配置，当字体发生变化时，也会销毁重建，但是不会回调 onConfigurationChanged 方法，所以说想要监听的变化必须要包含之内。
+
+        ```java
+        @Override
+            public void onConfigurationChanged(Configuration newConfig) {
+                super.onConfigurationChanged(newConfig);
+                if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    //竖屏
+                } else {
+                    //横屏
+                }
+            }
+        ```
+
+        
+
+    2. onTrimMemory
+
+        当内存紧张时会回调，它在 onStop 回调之前。指导应用程序在不同的情况下进行自身的内存释放，以避免被系统直接杀掉，提高应用程序的用户体验。它和 onLowMemory 相比，它有一个 level 评级，onLowMemory 能兼容更低的版本。
+
+        ```java
+        @Override
+        public void onTrimMemory(int level) {
+        	super.onTrimMemory(level);
+            if (level == TRIM_MEMORY_UI_HIDDEN) {
+        
+            }
+        }
+        ```
+
+        
+
+    
+
+* **Activity 的生命周期**
+
+    正常状态:
+
+     onCreate()—>onStart()—>onResume()-> onPause()—>onStop()
+
+    后台返回前台:
+
+     onRestart()—>**onStart()**—>onResume()
+
+    锁屏: 
+
+    onPause()->onStop()
+
+    解锁:
+
+    onStart()->onResume()
+
+
+
+* **Activity 的启动模式 任务栈**
+
+    使用`android:launchMode="standard|singleInstance|singleTask|singleTop"`来控制Acivity任务栈。
+
+    **任务栈**是一种后进先出的结构。位于栈顶的Activity处于焦点状态,当按下back按钮的时候,栈内的Activity会一个一个的出栈,并且调用其`onDestory()`方法。如果栈内没有Activity,那么系统就会回收这个栈,每个APP默认只有一个栈,以APP的包名来命名.
+
+    1. standard : 标准模式,每次启动Activity都会创建一个新的Activity实例,并且将其压入任务栈栈顶,而不管这个Activity是否已经存在。Activity的启动三回调(*onCreate()->onStart()->onResume()*)都会执行。
+
+    2. singleTop : 栈顶复用模式.这种模式下,如果新Activity已经位于任务栈的栈顶,那么此Activity不会被重新创建,所以它的启动三回调就不会执行,同时Activity的`onNewIntent()`方法会被回调.如果Activity已经存在但是不在栈顶,那么作用与*standard模式*一样.
+
+    3. singleTask: 栈内复用模式.创建这样的Activity的时候,系统会先确认它所需任务栈已经创建,否则先创建任务栈.然后放入Activity,如果栈中已经有一个Activity实例,那么这个Activity就会被调到栈顶,`onNewIntent()`,并且singleTask会清理在当前Activity上面的所有Activity.(clear top)
+
+    4. singleInstance : 加强版的singleTask模式,这种模式的Activity只能单独位于一个任务栈内,由于栈内复用的特性,后续请求均不会创建新的Activity,除非这个独特的任务栈被系统销毁了
+
+        
+
+    Activity的堆栈管理以ActivityRecord为单位,所有的ActivityRecord都放在一个List里面.可以认为一个ActivityRecord就是一个Activity栈
+
+    
+
+* **Activity 的数据保存 和 恢复**
+    * onSaveInstanceState
+
+        在activity　可能被回收之前调用,用来保存自己的状态和信息，以便回收后重建时恢复数据（在onCreate()或onRestoreInstanceState()中恢复）。旋转屏幕重建activity会调用该方法，但其他情况在onpause()和onStop()状态的activity不一定会调用, 官方说明:
+
+        > One example of when onPause and onStop is called and not this method is 
+        > when a user navigates back from activity B to activity A: there is no 
+        > need to call onSaveInstanceState on B because that particular instance 
+        > will never be restored, so the system avoids calling it. An example when
+        > onPause is called and not onSaveInstanceState is when activity B is 
+        > launched in front of activity A: the system may avoid calling 
+        > onSaveInstanceState on activity A if it isn't killed during the lifetime
+        > of B since the state of the user interface of A will stay intact.
+
+        也就是说，系统灵活的来决定调不调用该方法，**但是如果要调用就一定发生在onStop方法之前，但并不保证发生在onPause的前面还是后面。**
+
+    * onRestoreInstanceState
+
+        这个方法在onStart 和 onPostCreate之间调用，在onCreate中也可以状态恢复，但有时候需要所有布局初始化完成后再恢复状态。
+
+        onPostCreate：一般不实现这个方法，当程序的代码开始运行时，它调用系统做最后的初始化工作。
+
+    * 使用
+
+    	```java
+    public class MainActivity extends Activity {
+    
+    	@Override
+    	protected void onCreate(Bundle savedInstanceState) {
+    		if(savedInstanceState!=null){ //判断是否有以前的保存状态信息
+    			 savedInstanceState.get("Key"); 
+    			 }
+    		super.onCreate(savedInstanceState);
+    		setContentView(R.layout.activity_main);
+    	}
+       @Override
+    protected void onSaveInstanceState(Bundle outState) {
+    	// TODO Auto-generated method stub
+    	 //可能被回收内存前保存状态和信息，
+    	   Bundle data = new Bundle(); 
+    	   data.putString("key", "last words before be kill");
+    	   outState.putAll(data);
+    	super.onSaveInstanceState(outState);
+    }
+       @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    	// TODO Auto-generated method stub
+    	   if(savedInstanceState!=null){ //判断是否有以前的保存状态信息
+    			 savedInstanceState.get("Key"); 
+    			 }
+    	super.onRestoreInstanceState(savedInstanceState);
+    }
+    }
+    ```
+
+
+
+> Activity 在manifest 标签中的一些注意点
+
+* taskAffinity
+
+    在 singleTask 启动模式中，多次提到某个 Activity 所需的任务栈，什么是 Activity  所需要的任务栈呢？这就要从一个参数说起：taskAffinity，任务相关性。这个参数标识了一个 Activity  所需要的任务栈的名字，默认情况下，所有 Activity 所需的任务栈的名字为应用的包名。当然，我们可以为每个 Activity 都单独指定  taskAffinity 属性，这个属性值必须不能和包名相同，否则相当于没有设置。taskAffinity 属性主要和 singleTask  启动模式和 allowTaskReparentiong 属性配对使用，在其他情况下没有意义。
+
+    **taskAffinity 与 singleTask 配对使用：**
+
+    如果启动了设置了这两个属性的 Activity，这个 Activity 就会在 taskAffinity 设置的任务栈中。
+
+    **taskAffinity 与 allowTaskReparenting 配对使用：**
+
+    当一个应用 A 启动了应用 B 的某个 Activity 后，如果这个 Activity 的 allowTaskReparenting  属性为 true 的话，那么当应用 B 被启动后，此 Activity 会直接从应用 A 的任务栈转移到应用 B  的任务栈中。这个属性主要作用就是将这个 Activity  转移到它所属的任务栈中，例如一个短信应用收到一个带有网络链接的短信，点击链接会跳到浏览器，这时候如果 allowTaskReparenting  设置为 true 的话，打开浏览器应用就会直接显示刚才打开的网页页面，而打开短信应用后这个浏览器界面就会消失。
+
+    启动模式了解之后，那是如何指定启动模式的方式呢？
+
+    有两种：一种是在 AndroidMenifet 文件设置 launchMode 属性，一种是给 Intent 设置 Flag。
+
+    如果两者都存在，后者优先级更高。
 
 
 
@@ -126,15 +283,11 @@ IntentFilter 的三个属性:
 
 IntentFilter 的匹配规则
 
-①加载所有的Intent Filter列表 　　
-
-②去掉action匹配失败的Intent Filter 　　
-
-③去掉url匹配失败的Intent Filter 　　
-
-④去掉Category匹配失败的Intent Filter 　　
-
-⑤判断剩下的Intent Filter数目是否为0。如果为0查找失败返回异常；如果大于0，就按优先级排序，返回最高优先级的Intent Filter	
+- 加载所有的Intent Filter列表 　　
+- 去掉action匹配失败的Intent Filter 　　
+- 去掉url匹配失败的Intent Filter 　　
+- 去掉Category匹配失败的Intent Filter 　　
+- 判断剩下的Intent Filter数目是否为0。如果为0查找失败返回异常；如果大于0，就按优先级排序，返回最高优先级的Intent Filter	
 
 
 
@@ -154,13 +307,15 @@ IntentFilter 的匹配规则
 
 > 　常用ViewGroup 布局
 
-LinearLayout
+* LinearLayout
 
-RelativeLayout
+* RelativeLayout
 
-FrameLayout
+* FrameLayout
 
-ConstaintLayout
+* ConstaintLayout
+
+    https://www.jianshu.com/p/a74557359882
 
 
 
@@ -366,6 +521,22 @@ void surfaceDestroyed(SurfaceHolder holder):当surface将要被销毁时回调�
 
 #### 5.3.5 自定义View 的其他知识点
 
+ViewDragHelper
+
+https://blog.csdn.net/yanbober/article/details/50419059
+
+坐标系统
+
+https://blog.csdn.net/yanbober/article/details/50419117
+
+Scroller
+
+https://blog.csdn.net/yanbober/article/details/49904715
+
+
+
+
+
 
 
 ### 5.4 Android 中的多线程
@@ -377,6 +548,11 @@ Android 中的多线程
 ### 5.5 Android 中的存储方式
 
 Android 中原生的存储方式主要有以下几种常用方式
+
+- SQLite：SQLite是一个轻量级的数据库，支持基本的SQL语法，是常被采用的一种数据存储方式。 Android为此数据库提供了一个名为SQLiteDatabase的类，封装了一些操作数据库的api
+- SharedPreference： 除SQLite数据库外，另一种常用的数据存储方式，其本质就是一个xml文件，常用于存储较简单的参数设置。
+- File： 即常说的文件（I/O）存储方法，常用语存储大数量的数据，但是缺点是更新数据将是一件困难的事情。
+- ContentProvider: Android系统中能实现所有应用程序共享的一种数据存储方式，由于数据通常在各应用间的是互相私密的，所以此存储方式较少使用，但是其又是必不可少的一种存储方式。例如音频，视频，图片和通讯录，一般都可以采用此种方式进行存储。每个Content Provider都会对外提供一个公共的URI（包装成Uri对象），如果应用程序有数据需要共享时，就需要使用Content Provider为这些数据定义一个URI，然后其他的应用程序就通过Content Provider传入这个URI来对数据进行操作。
 
 
 
@@ -402,7 +578,7 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 
 
-### Android 应用的优化
+### Android 开发的优化
 
 * **应用的内存优化**
 
@@ -427,16 +603,46 @@ Android 中原生的存储方式主要有以下几种常用方式
     1. 前台进程：即与用户正在交互的Activity或者Activity用到的Service等，如果系统内存不足时前台进程是最后被杀死的
     2. 可见进程：可以是处于暂停状态(onPause)的Activity或者绑定在其上的Service，即被用户可见，但由于失去了焦点而不能与用户交互
     3. 服务进程：其中运行着使用startService方法启动的Service，虽然不被用户可见，但是却是用户关心的，例如用户正在非音乐界面听的音乐或者正在非下载页面自己下载的文件等；当系统要空间运行前两者进程时才会被终止
-    4. 后台进程：其中运行着执行onSto误p方法而停止的程序，但是却不是用户当前关心的，例如后台挂着的QQ，这样的进程系统一旦没了有内存就首先被杀死
+    4. 后台进程：其中运行着执行onStop方法而停止的程序，但是却不是用户当前关心的，例如后台挂着的QQ，这样的进程系统一旦没了有内存就首先被杀死
     5. 空进程：不包含任何应用程序的程序组件的进程，这样的进程系统是一般不会让他存在的
 
     
 
-    > **如何避免应用在后台被杀死?**
+    > **如何避免应用在后台被杀死 Service的保活 和 进程保活一致**
 
-    1. 调用startForegound，让你的Service所在的线程成为前台进程
-    2. Service的onStartCommond返回START_STICKY或START_REDELIVER_INTENT
-    3. Service的onDestroy里面重新启动自己
+    1. Service设置成START_STICKY
+
+    	- kill 后会被重启（等待5秒左右），重传Intent，保持与重启前一样
+
+    2. 提升service优先级
+
+    	- 在AndroidManifest.xml文件中对于intent-filter可以通过`android:priority = "1000"`这个属性设置最高优先级，1000是最高值，如果数字越小则优先级越低，**同时适用于广播**。
+    	- 【结论】目前看来，priority这个属性貌似只适用于broadcast，对于Service来说可能无效
+
+    3. 提升service进程优先级
+
+    	- Android中的进程是托管的，当系统进程空间紧张的时候，会依照优先级自动进行进程的回收
+    	- 当service运行在低内存的环境时，将会kill掉一些存在的进程。因此进程的优先级将会很重要，可以在startForeground()使用startForeground()将service放到前台状态。这样在低内存时被kill的几率会低一些。
+    	- 【结论】如果在极度极度低内存的压力下，该service还是会被kill掉，并且不一定会restart()
+
+    4. onDestroy方法里重启service
+
+    	- service +broadcast 方式，就是当service走onDestory()的时候，发送一个自定义的广播，当收到广播的时候，重新启动service
+    	- 也可以直接在onDestroy()里startService
+    	- 【结论】当使用类似口口管家等第三方应用或是在setting里-应用-强制停止时，APP进程可能就直接被干掉了，onDestroy方法都进不来，所以还是无法保证
+
+    5. 监听系统广播判断Service状态
+
+    	- 通过系统的一些广播，比如：手机重启、界面唤醒、应用状态改变等等监听并捕获到，然后判断我们的Service是否还存活，别忘记加权限
+    	- 【结论】这也能算是一种措施，不过感觉监听多了会导致Service很混乱，带来诸多不便
+
+    6. 在JNI层,用C代码fork一个进程出来
+
+    	- 这样产生的进程,会被系统认为是两个不同的进程.但是Android5.0之后可能不行
+
+    7. root之后放到system/app变成系统级应用
+
+    **大招: 放一个像素在前台(手机QQ)**
 
     
 
@@ -499,6 +705,8 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 
 ### Android 运行原理
+
+#### *Android 的开机过程
 
 #### * Android 的启动流程
 
