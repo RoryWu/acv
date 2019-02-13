@@ -1,4 +1,6 @@
-# Android 知识架构总结 by Jake
+
+
+Android 知识架构总结 by Jake
 
 ## 1. 数据结构
 
@@ -264,9 +266,11 @@
 
 #### 5.1.2 四大组件之Service
 
-> 生命周期
+* 生命周期
 
-> startService 和 bindService的区别
+    
+
+* **startService 和 bindService的区别:** 
 
 ​	* startService特点：
 
@@ -292,9 +296,73 @@
 
 
 
-> onStartCommand 不同返回值 的作用是什么?
+* **onStartCommand 不同返回值 的作用是什么?**
+
+    * START_STICKY  在运行onStartCommand后service进程被kill后，那将保留在开始状态，但是不保留那些传入的intent。不久后service就会再次尝试重新创建，因为保留在开始状态，在创建      service后将保证调用onstartCommand。如果没有传递任何开始命令给service，那将获取到null的intent。
+
+    * START_NOT_STICKY  在运行onStartCommand后service进程被kill后，并且没有新的intent传递给它。Service将移出开始状态，并且直到新的明显的方法（startService）调用才重新创建。因为如果没有传递任何未决定的intent那么service是不会启动，也就是期间onstartCommand不会接收到任何null的intent。
+
+    * START_REDELIVER_INTENT  在运行onStartCommand后service进程被kill后，系统将会再次启动service，并传入最后一个intent给onstartCommand。直到调用stopSelf(int)才停止传递intent。如果在被kill后还有未处理好的intent，那被kill后服务还是会自动启动。因此onstartCommand不会接收到任何null的intent。
+
+    
+
+* **使用startForgroundService 的方法**
+
+    1. 申请 FOREGROUND_SERVICE 权限，它是普通权限
+    2. 在 onStartCommand 中必须要调用 startForeground 构造一个通知栏，不然 ANR
+    3. 前台服务只能是启动服务，不能是绑定服务
+
+    
+
+* **bug**
+
+    ```java
+    android.app.RemoteServiceException
+    ```
+
+    使用前台服务，必须提供一个通知栏，不然五秒就会 ANR。
+
+    ```java
+      public int onStartCommand(Intent intent, int flags, int startId) {
+            Log.i(TAG, "onStartCommand: ");
+            NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            // 通知渠道的id
+            String id = "my_channel_01";
+            // 用户可以看到的通知渠道的名字.
+            CharSequence name = "Demo";
+            // 用户可以看到的通知渠道的描述
+            String description = "Desc";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel mChannel = new NotificationChannel(id, name, importance);
+            // 配置通知渠道的属性
+            mChannel.setDescription(description);
+            // 设置通知出现时的闪灯（如果 android 设备支持的话）
+            mChannel.enableLights(true);
+            mChannel.setLightColor(Color.RED);
+            // 设置通知出现时的震动（如果 android 设备支持的话）
+            mChannel.enableVibration(true);
+            mChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+            mNotificationManager.createNotificationChannel(mChannel);
+    
+            // 通知渠道的id
+            String CHANNEL_ID = "my_channel_01";
+            // Create a notification and set the notification channel.
+            Notification notification = new Notification.Builder(this, CHANNEL_ID)
+                    .setContentTitle("New Message").setContentText("You've received new messages.")
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .build();
+            startForeground(1, notification);
+            return super.onStartCommand(intent, flags, startId);
+        }
+    ```
+
+    
+
+
 
 > Service 的种类
+
+
 
 #### 5.1.3 四大组件之Broadcast
 
@@ -368,9 +436,338 @@
 
 #### 5.1.4 四大组件之ContentProvider
 
-* 作用与原理
-* 使用方法
+* **概述**
+
+    ContextProvider 为存储和获取数据提供了统一的接口，可以在不同的应用程序之间安全的共享数据。它允许把自己的应用数据根据需求开放给其他应用进行增删改查。数据的存储方式还是之前的方式，它只是提供了一个统一的接口去访问数据。
+
+* **统一资源标识符**
+
+    统一资源标识符即 URI，用来唯一标识 ContentProvider 其中的数据，外界进程通过 URI 找到对应的 ContentProvider 其中的数据，在进行数据操作。
+
+    URI 分为系统预置和自定义，分别对应系统内置的数据（如通讯录等）和自定义数据库。
+
+* **系统内置 URI**
+
+    比如获取通讯录信息所需要的 URI：ContactsContract.CommonDataKinds.Phone.CONTENT_URI。
+
+* **自定义 URI**
+
+```java
+格式:content://authority/path/id
+authority:授权信息，用以区分不同的 ContentProvider
+path:表名，用以区分 ContentProvider 中不同的数据表
+id: ID号，用以区别表中的不同数据
+示例:content://com.example.omooo.demoproject/User/1
+上述 URI 指向的资源是：名为 com.example.omooo.demoproject 的 ContentProvider 中表名为 User 中 id 为 1 的数据。
+```
+
+​	注意，URI 也存在匹配通配符：* & #
+
+
+
+* **MIME 数据类型**
+
+    它是用来指定某个扩展名的文件用某种应用程序来打开。
+
+    可以通过 ContentProvider.getType(uri) 来获得。
+
+    每种 MIME 类型由两部分组成：类型 + 子类型。
+
+    示例：text/html、application/pdf
+
+
+
+* **ContentProvider的使用**
+
+    * 组织数据方式
+
+        ContentProvider 主要以表格的形式组织数据，同时也支持文件数据，只是表格形式用的比较多，每个表格中包含多张表，每张表包含行和列，分别对应数据。
+
+    * 主要方法
+
+```java
+public class MyProvider extends ContentProvider {
+
+    @Override
+    public boolean onCreate() {
+        return false;
+    }
+
+    @Override
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+        return null;
+    }
+
+    @Override
+    public String getType(Uri uri) {
+        return null;
+    }
+
+    @Override
+    public Uri insert(Uri uri, ContentValues values) {
+        return null;
+    }
+
+    @Override
+    public int delete(Uri uri, String selection, String[] selectionArgs) {
+        return 0;
+    }
+
+    @Override
+    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        return 0;
+    }
+}
+```
+
+
+
+* **辅助工具类**
+
+  * ContentResolver
+
+    统一管理不同的 ContentProvider 间的操作。
+    ​	1. 即通过 URI 即可操作不同的 ContentProvider 中的数据
+    ​	2. 外部进程通过 ContentResolver 类从而与 ContentProvider 类进行交互
+
+    一般来说，一款应用要使用多个 ContentProvider，若需要了解每个 ContentProvider  的不同实现从而在完成数据交互，操作成本高且难度大，所以在 ContentProvider 类上多加一个 ContentResolver  类对所有的 ContentProvider 进行统一管理。
+
+    ContentResolver 类提供了与 ContentProvider 类相同名字和作用的四个方法：
+
+    ```java
+    // 外部进程向 ContentProvider 中添加数据
+    public Uri insert(Uri uri, ContentValues values)　 
+    
+    // 外部进程 删除 ContentProvider 中的数据
+    public int delete(Uri uri, String selection, String[] selectionArgs)
+    // 外部进程更新 ContentProvider 中的数据
+    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs)　 
+    
+    // 外部应用 获取 ContentProvider 中的数据
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder)
+    // 使用ContentResolver前，需要先获取ContentResolver
+    // 可通过在所有继承Context的类中 通过调用getContentResolver()来获得ContentResolver
+    ContentResolver resolver =  getContentResolver(); 
+    
+    // 设置ContentProvider的URI
+    Uri uri = Uri.parse("content://cn.scu.myprovider/user"); 
+    
+    // 根据URI 操作 ContentProvider中的数据
+    // 此处是获取ContentProvider中 user表的所有记录 
+    Cursor cursor = resolver.query(uri, null, null, null, "userid desc"); 
+    ```
+
+  * ContentUris
+    ​用来操作 URI 的，常用有两个方法：
+
+    ```java
+    // withAppendedId（）作用：向URI追加一个id
+    Uri uri = Uri.parse("content://cn.scu.myprovider/user") 
+    Uri resultUri = ContentUris.withAppendedId(uri, 7);  
+    // 最终生成后的Uri为：content://cn.scu.myprovider/user/7
+    // parseId（）作用：从URL中获取ID
+    Uri uri = Uri.parse("content://cn.scu.myprovider/user/7") 
+    long personid = ContentUris.parseId(uri); 
+    //获取的结果为:7
+    ```
+
+  * UriMatcher
+    在 ContentProvider 中注册 URI，根据 URI 匹配 ContentProvider 中对应的数据表。
+    ```java
+    // 步骤1：初始化UriMatcher对象
+    UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH); 
+    //常量UriMatcher.NO_MATCH  = 不匹配任何路径的返回码
+    // 即初始化时不匹配任何东西
+    
+    // 步骤2：在ContentProvider 中注册URI（addURI（））
+    int URI_CODE_a = 1；
+    int URI_CODE_b = 2；
+    matcher.addURI("cn.scu.myprovider", "user1", URI_CODE_a); 
+    matcher.addURI("cn.scu.myprovider", "user2", URI_CODE_b); 
+    // 若URI资源路径 = content://cn.scu.myprovider/user1 ，则返回注册码URI_CODE_a
+    // 若URI资源路径 = content://cn.scu.myprovider/user2 ，则返回注册码URI_CODE_b
+    
+    // 步骤3：根据URI 匹配 URI_CODE，从而匹配ContentProvider中相应的资源（match（））
+    @Override   
+      public String getType(Uri uri) {   
+        Uri uri = Uri.parse(" content://cn.scu.myprovider/user1");   
+    
+        switch(matcher.match(uri)){   
+       // 根据URI匹配的返回码是URI_CODE_a
+       // 即matcher.match(uri) == URI_CODE_a
+        case URI_CODE_a:   
+          return tableNameUser1;   
+          // 如果根据URI匹配的返回码是URI_CODE_a，则返回ContentProvider中的名为tableNameUser1的表
+        case URI_CODE_b:   
+          return tableNameUser2;
+          // 如果根据URI匹配的返回码是URI_CODE_b，则返回ContentProvider中的名为tableNameUser2的表
+      }   
+    }
+    ```
+
+  * ContentObserver
+    内容观察者，当 ContentProvider 中的数据发生变化时，就会触发 ContentObserver 类。
+    ```java
+          // 步骤1：注册内容观察者ContentObserver
+          getContentResolver().registerContentObserver（uri）；
+          // 通过ContentResolver类进行注册，并指定需要观察的URI
+    
+          // 步骤2：当该URI的ContentProvider数据发生变化时，通知外界（即访问该ContentProvider数据的访问者）
+          public class UserContentProvider extends ContentProvider { 
+            public Uri insert(Uri uri, ContentValues values) { 
+            db.insert("user", "userid", values); 
+            getContext().getContentResolver().notifyChange(uri, null); 
+            // 通知访问者
+         } 
+      }
+       // 步骤3：解除观察者
+       getContentResolver().unregisterContentObserver（uri）；
+       // 同样需要通过ContentResolver类进行解除
+    ```
+
+    
+
+  
+
+* **实例**
+
+  1. **获取通讯录信息**
+
+  这里就不需要自己写 ContentProvider 的实现了，用系统已经给的 URI。
+  ```java
+      /**
+       * 获取通讯录信息
+       */
+      private void getContactsInfo() {
+          Cursor cursor = getContentResolver().query(
+                  ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null
+          );
+          if (cursor != null) {
+              while (cursor.moveToNext()) {
+                  //联系人姓名
+                  String name = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
+                  //联系人手机号
+                  String phoneNumber = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                  Log.i(TAG, "getContactsInfo: name: " + name + "  phone: " + phoneNumber);
+              }
+              cursor.close();
+          }
+      }
+  ```
+
+  2. **结合 SQLite**
+      1. 创建数据库
+      2. 自定义 ContentProvider 并注册
+      3. 进程内访问数据
+
+          a. 创建数据库：
+
+    ```java
+    public class MySQLiteOpenHelper extends SQLiteOpenHelper {
+  
+        public MySQLiteOpenHelper(Context context) {
+            super(context, "user.info", null, 1);
+        }
+  
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            db.setPageSize(1024 * 4);
+    //        db.enableWriteAheadLogging();
+            db.execSQL("CREATE TABLE if not exists user (name text, age string)");
+        }
+  
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+  
+        }
+    }
+    ```
+
+  ​		b. 自定义 ContentProvider 并注册：
+    ```java
+        public class MyProvider extends ContentProvider {
+            private static UriMatcher mUriMatcher;
+  
+            static {
+                mUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+                mUriMatcher.addURI("com.example.omooo.demoproject.provider", "user", 1);
+            }
+  
+            private MySQLiteOpenHelper mMySQLiteOpenHelper;
+            private SQLiteDatabase mSQLiteDatabase;
+            private Context mContext;
+  
+            @Override
+            public boolean onCreate() {
+                mContext = getContext();
+                mMySQLiteOpenHelper = new MySQLiteOpenHelper(mContext);
+                mSQLiteDatabase = mMySQLiteOpenHelper.getWritableDatabase();
+                mSQLiteDatabase.execSQL("insert into user values('Omooo','18');");
+                return true;
+            }
+  
+            @Nullable
+            @Override
+            public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
+                return mSQLiteDatabase.query("user", projection, selection, selectionArgs, null, null, sortOrder, null);
+            }
+  
+            @Nullable
+            @Override
+            public String getType(@NonNull Uri uri) {
+                return null;
+            }
+  
+            @Nullable
+            @Override
+            public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
+                mSQLiteDatabase.insert("user", null, values);
+                mContext.getContentResolver().notifyChange(uri, null);
+                return uri;
+            }
+  
+            @Override
+            public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
+                return 0;
+            }
+  
+            @Override
+            public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection, @Nullable String[] selectionArgs) {
+                return 0;
+            }
+  
+        }
+            <provider
+                    android:exported="false"
+                    android:authorities="com.example.omooo.demoproject.provider"
+                    android:name=".provider.MyProvider"/>
+    ```
+
+  ​			c. 进程内访问数据：
+
+    ```java
+        private void insertTable() {
+            Uri uri = Uri.parse("content://com.example.omooo.demoproject.provider/user");
+            ContentValues values = new ContentValues();
+            values.put("name", "Test");
+            values.put("age", "21");
+            ContentResolver resolver = getContentResolver();
+            resolver.insert(uri, values);
+            Cursor cursor = resolver.query(uri, new String[]{"name", "age"}, null, null, null);
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    String name = cursor.getString(cursor.getColumnIndex("name"));
+                    String age = cursor.getString(cursor.getColumnIndex("age"));
+                    Log.i(TAG, "insertTable: name: " + name + " age: " + age);
+                }
+                cursor.close();
+            }
+        }
+    ```
+
 * 注意点与面试点
+
+
 
 #### 5.1.5 常用组件之Fragment
 
@@ -397,38 +794,35 @@ Fragment，俗称碎片，自Android 3.0开始被引进并大量使用。作为A
   3. 在Activity的布局文件中的适当位置添加fragment标签，指定name为Fragment的完整类名（这时候Activity中可以直接通过findViewById找到Fragment中的控件）
 
 - 动态加载（需要用到事务操作，常用）
-
   1. 创建Fragment的xml布局文件
-
   2. 在Fragment的onCreateView中inflate布局，返回
+    ```java
+         @Nullable
+         @Override
+         public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+             return inflater.inflate(R.layout.activity_main, container, false);
+         }
+    ```
 
-     ```java
-     @Nullable
-     @Override
-     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-         return inflater.inflate(R.layout.activity_main, container, false);
-     }
-     ```
-
-  3. 在Activity中通过获取FragmentManager（SupportFragmentManager），通过beginTransaction()方法开启事务
+    3. 初始化Fragment
 
   4. 进行add()/remove()/replace()/attach()/detach()/hide()/addToBackStack()事务操作（都是对Fragment的栈进行操作，其中add()指定的tag参数可以方便以后通过findFragmentByTag()找到这个Fragment）
 
   5. 提交事务：commit()
+      示例代码：
 
-     示例代码：
+    ```java
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        getSupportFragmentManager().beginTransaction()
+                .add(R.id.fragment_container, new TestFragment(), "test")
+                .commit();
+        TestFragment f = (TestFragment) getSupportFragmentManager().findFragmentByTag("test");
+    }
+    ```
 
-     ```java
-     @Override
-     protected void onCreate(Bundle savedInstanceState) {
-         super.onCreate(savedInstanceState);
-         setContentView(R.layout.activity_main);
-         getSupportFragmentManager().beginTransaction()
-                 .add(R.id.fragment_container, new TestFragment(), "test")
-                 .commit();
-         TestFragment f = (TestFragment) getSupportFragmentManager().findFragmentByTag("test");
-     }
-     ```
 
 ##### 5. Fragment通信问题
 
@@ -461,37 +855,38 @@ Fragment，俗称碎片，自Android 3.0开始被引进并大量使用。作为A
    优点：实时性高，双向通信，Activity与Fragment之间可以完全解耦 缺点：反射影响性能，无法获取返回数据，EventBUS难以维护
 
 4. 利用接口回调进行通信（Google官方推荐）
-
    ```java
-   //MainActivity实现MainFragment开放的接口
-   public class MainActivity extends FragmentActivity implements FragmentListener {
-       @override
-       public void toH5Page() {
-           //...其他处理代码省略
-       }
-   }
-   //Fragment的实现
-   public class MainFragment extends Fragment {
-       //接口的实例，在onAttach Activity的时候进行设置
-       public FragmentListener mListener;
-       //MainFragment开放的接口
-       public static interface FragmentListener {
-           //跳到h5页面
-           void toH5Page();
-       }
-       @Override
-       public void onAttach(Activity activity) {
-           super.onAttach(activity);
-           //对传递进来的Activity进行接口转换
-           if (activity instance FragmentListener){
-               mListener = ((FragmentListener) activity);
-           }
-       }
-        ...其他处理代码省略
-   }
+      //MainActivity实现MainFragment开放的接口
+      public class MainActivity extends FragmentActivity implements FragmentListener {
+          @override
+          public void toH5Page() {
+              //...其他处理代码省略
+          }
+      }
+      //Fragment的实现
+      public class MainFragment extends Fragment {
+          //接口的实例，在onAttach Activity的时候进行设置
+          public FragmentListener mListener;
+          //MainFragment开放的接口
+          public static interface FragmentListener {
+              //跳到h5页面
+              void toH5Page();
+          }
+          @Override
+          public void onAttach(Activity activity) {
+              super.onAttach(activity);
+              //对传递进来的Activity进行接口转换
+              if (activity instance FragmentListener){
+                  mListener = ((FragmentListener) activity);
+              }
+          }
+          // ...其他处理代码省略
+      }
    ```
 
-   优点：既能达到复用，又能达到很好的可维护性，并且性能得到保证 缺点：假如项目很大了，Activity与Fragment的数量也会增加，这时候为每对Activity与Fragment交互定义交互接口就是一个很麻烦的问题（包括为接口的命名，新定义的接口相应的Activity还得实现，相应的Fragment还得进行强制转换）
+   优点：既能达到复用，又能达到很好的可维护性，并且性能得到保证 
+
+   缺点：假如项目很大了，Activity与Fragment的数量也会增加，这时候为每对Activity与Fragment交互定义交互接口就是一个很麻烦的问题（包括为接口的命名，新定义的接口相应的Activity还得实现，相应的Fragment还得进行强制转换）
 
 5. 通过Handler进行通信（其实就是把接口的方式改为Handler）
 
@@ -549,6 +944,8 @@ Fragment，俗称碎片，自Android 3.0开始被引进并大量使用。作为A
 
 
 #### 5.1.6 常用组件之SharedPreference
+
+
 
 #### 5.1.7 常用组件之Intent
 
@@ -612,7 +1009,446 @@ IntentFilter 的匹配规则
 
 #### 5.1.13 常用组件之Bitmap
 
+#### 5.1.14 重要组件
 
+* WebView
+
+    * webview 的后退事件
+
+        ```java
+         /**
+             * Back 键后退网页
+             * 如果又重写了 onBackPressed 方法，只会回调 onKeyDown
+             */
+            @Override
+            public boolean onKeyDown(int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_BACK && mWebView.canGoBack()) {
+                    mWebView.goBack();
+                    return true;
+                }
+                return super.onKeyDown(keyCode, event);
+            }
+        	mWebView.onPasue();
+            //清除缓存数据
+            mWebView.clearCache(true);	//清除缓存
+            mWebView.clearHistory();	//清除浏览记录
+            mWebView.clearFormData();	//清除自动填充的表单数据
+        ```
+
+        
+
+    * webView 重要的类
+
+        * webviewSettings
+
+            ```java
+             private void setWebViewSettings(WebView webView){
+                    WebSettings webSettings=webView.getSettings();
+                    webSettings.setJavaScriptEnabled(true); //支持 JS
+                    webSettings.setJavaScriptCanOpenWindowsAutomatically(true); //支持通过 JS 打开新的窗口
+                    //设置自适应屏幕
+                    webSettings.setUseWideViewPort(true);
+                    webSettings.setLoadWithOverviewMode(true);
+            
+                    webSettings.setLoadsImagesAutomatically(true);  //设置自动加载图片
+                    webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);    //不使用缓存
+            		//...
+                }
+            ```
+
+            
+
+        * webviewClient
+
+            ```java
+            //在当前 WebView 打开页面，而不是系统浏览器
+            //如果不需要转发处理，只需要传递一个 WebViewClent 实例，根本不需要重写 shouldOverrideUrlLoading 方法     
+            public class MyWebViewClient extends WebViewClient {
+            
+                private Context mContext;
+            
+                public MyWebViewClient(Context context) {
+                    mContext = context;
+                }
+            
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    //当前 WebView 处理
+                    if (request.getUrl().getHost().equals("https://www.example.com")) {
+                        return false;
+                    }
+                    //如果需要转发处理
+                    mContext.startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl()));
+                    return true;
+                }
+            
+                @Override
+                public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                    switch (error.getErrorCode()){
+                        case WebViewClient.ERROR_CONNECT:   //连接失败
+                            view.loadUrl("file:///android_asset/error.html");
+                            break;
+                    }
+                }
+            
+                @Override
+                public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                    handler.proceed();  //等待证书响应 
+                    //handler.cancel();   //挂起连接 默认行为
+                }
+            }
+            
+            mWebView.setWebViewClient(new MyWebViewClient(MainActivity.this));
+            ```
+
+            
+
+        * WebChromeClient
+
+            ```java
+            public class MyWebChromeClient extends WebChromeClient {
+            
+                /**
+                 * 网页加载进度
+                 */
+                @Override
+                public void onProgressChanged(WebView view, int newProgress) {
+                    super.onProgressChanged(view, newProgress);
+                }
+            
+                /**
+                 * 网页标题加载完毕回调
+                 */
+                @Override
+                public void onReceivedTitle(WebView view, String title) {
+                    super.onReceivedTitle(view, title);
+                }
+            
+                /**
+                 * 拦截输入框
+                 */
+                @Override
+                public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+                    return super.onJsPrompt(view, url, message, defaultValue, result);
+                }
+            
+                /**
+                 * 拦截确认框
+                 */
+                @Override
+                public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
+                    return super.onJsConfirm(view, url, message, result);
+                }
+            
+                /**
+                 * 拦截弹框
+                 */
+                @Override
+                public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+                    return super.onJsAlert(view, url, message, result);
+                }
+            }
+            
+            
+            mWebView.setWebChromeClient(new MyWebChromeClient());
+            ```
+
+            > webviewclient 与 webviewChromeClient 的区别
+
+            ​	1. WebViewClient主要帮助WebView处理各种通知、请求事件的
+
+            ​	2. WebChromeClient主要辅助WebView处理Javascript的对话框、网站图标、网站title、加载进度
+
+            ​	3. 看上去他们有很多不同，实际使用的话，如果你的WebView只是用来处理一些html的页面内	容，只用WebViewClient就行了，如果需要更丰富的处理效果，比如JS、进度条等，就要用到WebChromeClient。
+
+    ​		
+
+    * webview 与JS 交互
+
+        * Android 调用 JS 代码
+
+            * webView.loadUrl(url)
+            * webView.evaluateJavascript()
+
+            首先选准备一个静态文件：
+
+        ```html
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Title</title>
+            <script>
+           function callJS(){
+              alert("Android调用了 JS 的 callJS() 方法");
+           }
+            </script>
+            <p3>
+                WebView 与 JS 交互！
+            </p3>
+        </head>
+        </html>
+        ```
+
+        ​	第一种方式：loadUrl()
+
+        ```java
+                mWebView.loadUrl("javascript:callJS()");
+                mWebView.setWebChromeClient(new WebChromeClient(){
+                    @Override
+                    public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
+                        AlertDialog dialog=new AlertDialog.Builder(WebViewContactActivity.this)
+                                .setTitle("Title")
+                                .setPositiveButton("确认", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        result.confirm();
+                                    }
+                                })
+                                .setCancelable(false)
+                                .setMessage(message)
+                                .create();
+                        dialog.show();
+                        return true;
+                    }
+                });
+        ```
+
+        ​	可以看到，WebView 只是载体，内容的渲染还的通过 WebChromeClient 承载。
+
+        ​	第二种方式：evaluateJavascript()
+
+        ```java
+                mWebView.evaluateJavascript("javascript:callJS()", new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String value) {
+                        //JS 返回的结果
+                        Toast.makeText(WebViewContactActivity.this, "value " + value, Toast.LENGTH_SHORT).show();
+                    }
+                });
+        ```
+
+        ​	只是把上面的 loadUrl 换成 evaluateJavascript 方法而已。但是这种方法比第一种方式效率高，因为该方法的执行不会使页面刷新。
+
+        ​	两种方法的对比：
+
+        | 调用方式            | 优点     | 缺点                       | 使用场景                           |
+        | ------------------- | -------- | -------------------------- | ---------------------------------- |
+        | loadUrl             | 方便简洁 | 效率低                     | 不需要获取返回值，对性能要求较低时 |
+        | evaluatedJavascript | 效率高   | 向下兼容性差（ API > 19 ） | API > 19                           |
+
+        ​	当然也可以通过 Build.VERSION 来进行判断执行。
+
+        ##### 
+
+        * JS 调用 Android 代码
+            * 通过 WebView.addJavascriptInterface 进行对象映射
+            * 通过 WebViewClient.shouldOverrideUrlLoading 方法回调拦截 url
+            * 通过 WebChromeClient 的 onJsAlert、onJsConfirm、onJsPrompt 方法回调拦截 JS 对话框 alert、confirm、prompt 消息
+
+            第一种方式：WebView.addJavascriptInterface 进行对象映射
+
+            首先先准备好资源文件，用于模拟 WebView 加载的网页：
+
+        ```html
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Demo</title>
+            <script>
+                 function callAndroid(){
+                    test.hello("js调用了android中的hello方法");
+                 }
+              </script>
+        </head>
+        <body>
+        <p2>JS 调用 Android 方法</p2>
+        <button type="button" id="button1" onclick="callAndroid()">点击按钮调用 Android 的 hello 方法</button>
+        </body>
+        </html>
+        ```
+
+        ​	然后定义一个 JS 对象映射关系的 Android 类：
+
+        ```java
+        public class JSObject extends Object {
+        
+            private Context mContext;
+        
+            public JSObject(Context context) {
+                mContext = context;
+            }
+        
+            @JavascriptInterface
+            public void hello(String msg){
+                Toast.makeText(mContext, "JS 调用了 Android 的 hello 方法", Toast.LENGTH_SHORT).show();
+            }
+        }
+        ```
+
+        ​	最后就是通过 WebView 设置 Android 类与 JS 代码的映射：
+
+        ```java
+        mWebView.loadUrl("file:///android_asset/js_to_android.html");
+        mWebView.addJavascriptInterface(new JSObject(this),"test");
+        ```
+
+        ​	第二种方式：WebViewClient.shouldOverrideUrlLoading 方法回调拦截 url
+
+        ​	Android 通过 WebViewClient 的回调方法 shouldOverrideUrlLoading 拦截 url，解析该 url 协议，如果检测到是预先约定好的协议，就调用 Android 相应的方法。
+
+        ```html
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Demo</title>
+            <script>
+                 function callAndroid(){
+                    document.location = "js://webview?arg1=2333&arg2=222";
+                 }
+              </script>
+        </head>
+        <body>
+        <p2>JS 调用 Android 方法</p2>
+        <button type="button" id="button1" onclick="callAndroid()">点击按钮调用 Android 的方法</button>
+        </body>
+        </html>
+        mWebView.loadUrl("file:///android_asset/js_call_android.html");
+                mWebView.setWebViewClient(new WebViewClient(){
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                        if ("js".equals(request.getUrl().getScheme())){
+                            if ("webview".equals(request.getUrl().getAuthority())){
+                                Toast.makeText(WebViewContactActivity.this, "JS 调用 Android 方法，参数一为："+request.getUrl().getQueryParameter("arg1"), Toast.LENGTH_SHORT).show();
+                            }
+                            return true;
+                        }
+                        return super.shouldOverrideUrlLoading(view, request);
+                    }
+                });
+        ```
+
+        ​	第三种方式：通过 WebChromeClient 的 onJsAlert、onJsConfirm、onJsPrompt 方法回调拦截 JS 对话框的消息
+
+        ​	这里只示例 onJsPrompt 的回调，因为这个方法可以返回任意类型的值。
+
+        ```html
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Demo</title>
+            <script>
+                 function callAndroid(){
+                    var result=prompt("js://demo?arg1=111&arg2=222");
+                    alert("demo " + result);
+                 }
+              </script>
+        </head>
+        <body>
+        <p2>JS 调用 Android 方法</p2>
+        <button type="button" id="button1" onclick="callAndroid()">点击按钮调用 Android 的方法</button>
+        </body>
+        </html>
+        -------java----------
+               mWebView.loadUrl("file:///android_asset/js_call_android_demo.html");
+                mWebView.setWebChromeClient(new WebChromeClient(){
+                    @Override
+                    public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+                        Uri uri=Uri.parse(message);
+                        if ("js".equals(uri.getScheme())){
+                            if ("demo".equals(uri.getAuthority())){
+                                result.confirm("JS 调用了 Android 的方法");
+                            }
+                            return true;
+                        }
+                        return super.onJsPrompt(view, url, message, defaultValue, result);
+                    }
+                });
+        ```
+
+        ​	三种方式的比较：
+
+        | 调用方式                                                     | 优点       | 缺点                     | 使用场景                           |
+        | ------------------------------------------------------------ | ---------- | ------------------------ | ---------------------------------- |
+        | WebView.addJavascriptInterface 对象映射                      | 方便简洁   | Android 4.2 一下存在漏洞 | Android 4.2 以上相对简单的应用场景 |
+        | WebViewClient.shouldOverrideUrlLoading 回调拦截              | 不存在漏洞 | 使用复杂，需要协议约束   | 不需要返回值情况下                 |
+        | WebChormeClient.onJsAlert / onJsConfirm / onJsPrompt 方法回调拦截 | 不存在漏洞 | 使用复杂，需要协议约束   | 能满足大多数场景                   |
+
+    * Webview 的常见问题
+
+        * WebView 销毁
+
+            ```java
+            @Override
+                protected void onDestroy() {
+                    super.onDestroy();
+                    if (mWebView != null) {
+                        mWebView.loadDataWithBaseURL("", null, "text/html", "utf-8", null);
+                        mWebView.clearHistory();
+                        ((ViewGroup) mWebView.getParent()).removeView(mWebView);
+                        mWebView.destroy();
+                        mWebView = null;
+                    }
+                }
+            ```
+
+            
+
+        * Android P 阻止加载任何 http 的请求
+
+            Mainfest 中加入：
+
+            ```java
+            android:usesCleartextTraffic="true"
+            ```
+
+        * Android 5.0 之后 WebView 禁止加载 http 与 https 混合内容
+
+            ```java
+            if (Build.VERSION.SDK_INT>Build.VERSION_CODES.LOLLIPOP){
+                      mWebView.getSettings().
+                          setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+                    }
+            ```
+
+        * WebView 开启硬件加速导致的问题
+
+            比如不能打开 PDF，播放视频花屏等等。
+
+            关闭硬件加速，或者直接用第三方库吧。
+
+    * webview 的优化
+
+        1. 给 WebView 加一个加载进度条
+
+            重写 WebChromeClient 的 onProgressChanged 方法。
+
+        2. 提高 HTML 网页加载速度，等页面 finsh 在加载图片
+
+            ```
+            public void int () {
+                if(Build.VERSION.SDK_INT >= 19) {
+                    webView.getSettings().setLoadsImagesAutomatically(true);
+                } else {
+                    webView.getSettings().setLoadsImagesAutomatically(false);
+                }
+            }
+            ```
+
+        3. 自定义 WebView 错误页面
+
+            重写 WebViewClient 的 onReceivedError 方法。
+
+    ---
+
+* RecyclerView
+
+    
+
+* Viewpager
 
 
 
@@ -807,6 +1643,14 @@ void surfaceDestroyed(SurfaceHolder holder):当surface将要被销毁时回调�
 1. View缺乏双缓冲机制
 2. 当程序需要更新View上的图像时，程序必须重绘View上显示的整张图片
 3. 新线程无法直接更新View组件
+
+
+
+> invalidate()和postInvalidate() 的区别及使用
+
+<http://blog.csdn.net/mars2639/article/details/6650876>
+
+
 
 
 
