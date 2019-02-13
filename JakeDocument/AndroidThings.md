@@ -1428,7 +1428,7 @@ IntentFilter 的匹配规则
 
         2. 提高 HTML 网页加载速度，等页面 finsh 在加载图片
 
-            ```
+            ```java
             public void int () {
                 if(Build.VERSION.SDK_INT >= 19) {
                     webView.getSettings().setLoadsImagesAutomatically(true);
@@ -1444,7 +1444,24 @@ IntentFilter 的匹配规则
 
     ---
 
-* RecyclerView
+* **RecyclerView**
+
+    * 
+
+    > RecyclerView 与 ListView 的区别
+
+    RecyclerView 相比 ListView，有一些明显的优点：
+
+    1. 默认已经实现了 View 的复用，而且复用机制更加完善
+    2. 支持局部刷新
+    3. Item 添加、删除动画，Item 实现拖拽、侧滑删除等
+    4. 更灵活的 LayoutManager
+
+    当然，ListView 相比 RecyclerView 也有优点：
+
+    1. addHeaderView、addFooterView 添加头视图、尾视图
+    2. 通过 android:divider 设置自定义分割线
+    3. setOnItemClickListener、setOnItemLongClickListener 设置点击事件以及长按事件
 
     
 
