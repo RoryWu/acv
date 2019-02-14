@@ -1895,8 +1895,10 @@ HTTPS优化的注意点？
 
 ### 8.3 编程技巧
 
-关于位运算
+* 关于位运算
 
-关于正则表达式
+    [位运算](位运算.md)
+
+* 关于正则表达式
 
 https://blog.csdn.net/bobo89455100/article/category/6604866/2?orderby=UpdateTime
