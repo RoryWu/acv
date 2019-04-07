@@ -61,7 +61,7 @@ Handler的工作是依赖于Looper的，而Looper（与消息队列）又是属�
 
 正确的在子线程中创建Handler的方法如下（可以使用HandlerThread代替）：
 
-```
+```java
     handler = null;
     new Thread(new Runnable() {
 
@@ -97,7 +97,7 @@ Handler的工作是依赖于Looper的，而Looper（与消息队列）又是属�
 
 UI更新的时候，会对当前线程进行检验，如果不是主线程，则抛出异常：
 
-```
+```java
 void checkThread() {
     if (mThread != Thread.currentThread()) {
         throw new CalledFromWrongThreadException(
