@@ -1,36 +1,18 @@
 
 
-Android 知识架构总结 by Jake
+# Android 知识架构总结 by Jake
 
-## 1. 数据结构
+## 1. 数据结构与算法
 
-### 1.1 数组/队列
+[常用数据结构与算法](./数据结构与算法.md)
 
-### 1.2 单链表
+---
 
-### 1.3 双链表
+## 2. JVM的理解
 
-### 1.4 Hash 表
+---
 
-1.5 树
-
-1.6 图
-
-
-
-## 2. 算法
-
-### 2.1 搜索
-
-### 2.2 排序
-
-> **各种排序：冒泡、选择、插入、希尔、归并、快排、堆排、桶排、基数的原理、平均时间复杂度、最坏时间复杂度、空间复杂度、是否稳定。**
-
-
-
-
-
-## 3. Java基础知识与JVM的理解
+## 3. Java基础知识
 
 1. 线程
 
@@ -40,21 +22,11 @@ Android 知识架构总结 by Jake
 
     
 
-
+---
 
 ## 4. 设计模式
 
 ### 4.1 关于复杂度
-
-#### 时间复杂度
-
-> 如何计算时间复杂度 
-
-> 常见复杂度的计算时间级别
-
-#### 空间复杂度
-
->  如何计算控件复杂度
 
 ### 4.2 单例模式
 
@@ -78,7 +50,7 @@ Android 知识架构总结 by Jake
 
 
 
-
+---
 
 ## 5. Android 知识体系与基础知识
 
@@ -225,7 +197,7 @@ Android 知识架构总结 by Jake
 
 * Android Context 的理解
 
-    [Android 中的Context](./Android Context.md)
+    [Android 中的Context](./Android_Context.md)
 
     
 
@@ -293,7 +265,7 @@ Android 知识架构总结 by Jake
 
 #### 5.3.5 考点
 
-> **为什么要使用SurfaceView 来做过渡动画?**
+>  **为什么要使用SurfaceView 来做过渡动画?**
 
 ​	因为View的绘图存在以下缺陷：
 
@@ -303,7 +275,7 @@ Android 知识架构总结 by Jake
 
 
 
-> invalidate()和postInvalidate() 的区别及使用
+> **invalidate()和postInvalidate() 的区别及使用**
 
 <http://blog.csdn.net/mars2639/article/details/6650876>
 
@@ -320,10 +292,19 @@ Android 知识架构总结 by Jake
 ### 5.4 Android 中的多线程
 
 * Android 中常见的多线程
-    * IntentService
-    * Rxjava
+
+    * Thread
     * HandlerThread
+
+    * IntentService
+
     * AsyncTask
+
+    * 线程池
+
+    * Rxjava
+
+        
 
 
 
@@ -360,13 +341,13 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 3. Lint
 
-4. 
+4. AOP
 
      
 
+===
 
-
-
+---
 
 ## 6.Android进阶知识点
 
@@ -416,7 +397,11 @@ Android 中原生的存储方式主要有以下几种常用方式
 
     > 网络图片的加载 以及LRU
 
+    ​	
 
+
+
+---
 
 ### 6.2 Android 的开发模式理解
 
@@ -428,7 +413,7 @@ Android 中原生的存储方式主要有以下几种常用方式
 
     
 
-
+---
 
 ### 6.3 Android 的开源框架
 
@@ -459,13 +444,17 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 - Lottie
 
-- 
+    
 
 
+
+---
 
 ### 6.4 Android 的应用发布流程
 
 
+
+---
 
 ### 6.5 Android 运行原理
 
@@ -474,6 +463,8 @@ Android 中原生的存储方式主要有以下几种常用方式
 * **Android 的打包流程**
 * **Android 的分包原理**
 * **APK 的安装流程**
+
+---
 
 
 
@@ -486,13 +477,13 @@ Android 中原生的存储方式主要有以下几种常用方式
 * gradle
 * databinding
 
-
+---
 
 ### 6.7 Android 推送方案
 
 https://www.cnblogs.com/Joanna-Yan/p/6241354.html
 
-
+---
 
 ### 6.8 Android 的零碎知识点
 
@@ -503,11 +494,11 @@ https://www.cnblogs.com/Joanna-Yan/p/6241354.html
 * Android 5.0 6.0 7.0 8.0 9.0 的特性
 * Dalvik 与 ART 的区别
 
-
+---
 
 ### 6.9 Kotlin
 
-
+---
 
 ## 7. 网络协议相关
 
