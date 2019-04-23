@@ -113,8 +113,10 @@
 * 常见问题
 
     >  如何在短信中启动一个Activity
-
-
+    
+    https://blog.csdn.net/u014626094/article/details/79501298
+    
+    
 
 #### 5.1.8 常用组件之Drawable
 
@@ -337,13 +339,15 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 1. 全局异常处理
 
+    https://blog.csdn.net/import_sadaharu/article/details/82389151
+
 2. ANR
 
 3. Lint
 
 4. AOP
 
-     
+      
 
 ===
 
@@ -421,6 +425,8 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 - 网络OKHttp 框架
 
+    [本地OKHttp 详解](./3rd_OKHttp.md)
+
 - 图片加载框架
     * Fresco
     * Glide
@@ -432,6 +438,8 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 - 消息机制框架 EventBus
 
+    [本地EventBus 详解](./3rd_EventBus.md)
+
 - 布局框架
 
     * vlayout
@@ -441,6 +449,8 @@ Android 中原生的存储方式主要有以下几种常用方式
     * LeakCanery
 
         [LeakCanary的工作过程以及原理](https://github.com/linsir6/AndroidNote/blob/master/AndroidNote/Android%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E7%9B%B8%E5%85%B3/LeakCanary%E5%B7%A5%E4%BD%9C%E8%BF%87%E7%A8%8B%E4%BB%A5%E5%8F%8A%E5%8E%9F%E7%90%86.md)
+        
+        [本地LeakCanary 详解](./3rd_LeakCanary.md)
 
 - Lottie
 
