@@ -332,12 +332,90 @@ Object obj = new Object();
 
 ## GC
 
+### 垃圾回收算法的知识点
+
 1. 作用域
 2. 常见的垃圾回收算法
     1. 引用计数(较难处理循环引用的问题)
     2. 复制(年轻代区使用 , 复制之后有交换, 谁空谁是错)
+    3. 标记清除 (CMS 垃圾回收器使用 ， 节省空间 ， 但是内存不连续 ， 相应时间最短)
+    4. 标记整理
+3. 在内存的不同区域使用不同的垃圾回收器
 
+    * 在young区 更多的使用复制算法
+    * 在old区 更多使用标记整理，标记清除
+4. GCRoot 怎么确认
 
+### 垃圾回收器
+
+#### 种类
+
+1. 串行垃圾回收器
+2. 并行垃圾回收器
+3. 并发垃圾回收器
+4. G1 (java8)
+
+#### 使用场景
+
+ ![垃圾回收器](./gc_1.png)
+
+![java8 垃圾回收器](./gc_2.png)
+
+#### 具体的7大收集器
+
+参数预说明：
+
+* DefNew — default  new generate
+* Tenured — old
+* ParNew — Parallel New Generate
+* PSYoungGen — Parallel Scavenge
+* ParOldGen — Parallel Old Generate
+
+新生代：
+
+* 串行GC(Serial/Serial Copying)
+* 并行GC(ParNew)
+* 并发回收GC(Parallel/Parallel Scavenge)
+
+老年代：
+
+* 串行： Serial Old
+* 并行GC ： Serial Old(msc)/CMS
+* 并发回收GC ： Serial Old/Parallel Old
+
+新生代收集器场景：（新生与老年代 ， 相互对应， 相互激活）
+
+* Serial — 新生代1 ， 老年代1 
+
+* ParNew ——  新生代1 ， 老年代N 新生代采用复制，老年代采用标记整理算法（但是ParNew + Tenured 在java 8 不推荐）
+* Parallel Scavenge ——  新生代N ， 老年代N（java8 默认）， 新生代也是复制算法 ，Parallel Old
+
+老年代收集器场景：
+
+* Parallel Old — 标记整理算法（1.6 之前 Parallel Scavenge + Serial Old）
+
+* CMS收集器 — 并发标记清除 **重要**+UseConcMarkSweepGC ， 在新生代自动采用ParNew ， Serial Old 是在CMS出问题后的备用收集器
+
+* Serial Old —— 标记整理  （单线程）
+
+  
+
+### 如何选择垃圾收集器
+
+* 单CPU 或者小内存，单机程序
+  * -XX:+UseSerialGC
+* 多CPU 大吞吐量， 如后台计算机
+  * -XX:+UseParallelGC
+  * -XX:+UseParallelOldGC
+* 多CPU ，追求低停顿时间 ， 快速响应 ， 如互联网应用
+  * -XX:+UseConcMarkSweepGC
+  * -XX:+ParNewGC
+
+### G1 垃圾收集器
+
+* G1 整体上采用标记-整理算法
+* 新生代 ， 局部采用复制算法  不会产生内存碎片
+* 原理内存分成一些小块的区域， 单独整理
 
 
 
