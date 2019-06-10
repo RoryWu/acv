@@ -1,4 +1,8 @@
+[TOC]
+
 # Git
+
+### 基本使用
 
 git add . 
 
@@ -12,13 +16,13 @@ git rebase origin
 
 -------------------
 
-没有问题:
+#### 没有问题:
 
 >  git push
 
 --------------
 
-有问题: 
+#### 有问题: 
 
 > 处理冲突
 >
@@ -30,7 +34,7 @@ git rebase origin
 
 
 
-如果中间有提交重复
+#### 如果中间有提交重复
 
 > git rebase --abort 
 >
@@ -45,4 +49,26 @@ git rebase origin
 > git rebase --continue
 >
 > git push 
+
+
+
+#### 关键命令：
+
+git add <file>-----------暂存文件
+
+git reset HEAD <file>
+
+git checkout -- <file>... 
+
+
+
+
+
+### 关于Repo
+
+
+
+#### 借鉴：
+
+<https://www.cnblogs.com/angeldevil/archive/2013/11/26/3238470.html>
 
