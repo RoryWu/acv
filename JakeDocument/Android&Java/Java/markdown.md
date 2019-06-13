@@ -2,13 +2,399 @@
 
 # java 高级
 
-## JUC
+## 数据结构与JUC
+
+### 常见数据结构
+
+#### 数据结构整体
+
+```js
+Collection
+├List
+│├LinkedList
+│├ArrayList
+│└Vector
+│　└Stack
+└Set
+│    └HashSet
+│    		└LinkedHashSet
+|    └TreeSet
+└Queue
+
+Map
+├Hashtable
+├HashMap
+│	└LinkedHashMap
+├TreeMap
+└WeakHashMap
+```
 
 
 
-### 线程排序
+#### 图示:
 
-#### countdownlatch
+![img](https://img-blog.csdnimg.cn/20190514164943406.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zNjM3ODkxNw==,size_16,color_FFFFFF,t_70)
+
+#### 数据结构细节分析
+
+* #### ArrayList
+
+    * 底层原理:
+        * 底层就是一个数组, 因此按序查找快, 乱序插入, 删除因为涉及到后面元素移位所以性能慢.
+        * 扩容: 一般默认容量是10, 扩容后, 会length*1.5.
+        * ArrayList中的对象数组的最大数组容量为Integer.MAX_VALUE – 8。
+        
+    * 特点与知识点:
+
+        * 线程不安全:
+            * 对ArrayList进行添加元素的操作的时候是分两个步骤进行的，即第一步先在object[size]的位置上存放需要添加的元素；第二步将size的值增加1。由于这个过程在多线程的环境下是不能保证具有原子性的，因此ArrayList在多线程的环境下是线程不安全的。
+        * 想要实现线程安全:
+            * 第一，使用synchronized关键字；
+            * 第二，可以用Collections类中的静态方法synchronizedList()
+            * CopyOnWriteArrayList
+    * 优缺点:
+
+        * ArrayList的优点
+          
+            * ArrayList底层以数组实现，是一种随机访问模式，再加上它实现了RandomAccess接口，因此查找也就是get的时候非常快。
+            * ArrayList在顺序添加一个元素的时候非常方便，只是往数组里面添加了一个元素而已。
+            * 根据下标遍历元素，效率高。
+            * 根据下标访问元素，效率高。
+            * 可以自动扩容，默认为每次扩容为原来的1.5倍。
+                    
+            
+        * ArrayList的缺点
+        
+            * 插入和删除元素的效率不高。
+            * 根据元素下标查找元素需要遍历整个元素数组，效率不高。
+            * 线程不安全。
+        
+              
+
+* #### LinkedList
+
+    * 底层原理:
+
+        * LinkedList 是一个继承于AbstractSequentialList的双向链表。它也可以被当作堆栈、队列或双端队列进行操作。 
+        * LinkedList 实现 List 接口，能对它进行队列操作。
+        * LinkedList 实现 Deque 接口，即能将LinkedList当作双端队列使用。
+        * LinkedList 实现了Cloneable接口，即覆盖了函数clone()，能克隆。
+        * LinkedList 实现java.io.Serializable接口，这意味着LinkedList支持序列化，能通过序列化去传输。
+        * LinkedList 是非同步的。
+
+    * 特点与知识点
+
+        * AbstractSquentialList 接口
+
+            * AbstractSequentialList 实现了get(int index)、set(int index, E element)、add(int index, E element) 和 remove(int index)这些函数。**这些接口都是随机访问List的**，LinkedList是双向链表；既然它继承于AbstractSequentialList，就相当于已经实现了“get(int index)这些接口”。
+
+                此外，我们若需要通过AbstractSequentialList自己实现一个列表，只需要扩展此类，并提供 listIterator() 和 size() 方法的实现即可。若要实现不可修改的列表，则需要实现列表迭代器的 hasNext、next、hasPrevious、previous 和 index 方法即可。
+
+        * LinkedList包含两个重要的成员：header 和 size。
+
+            * header是双向链表的表头，它是双向链表节点所对应的类Entry的实例。Entry中包含成员变量： previous, next, element。其中，previous是该节点的上一个节点，next是该节点的下一个节点，element是该节点所包含的值。 
+            * size是双向链表中节点的个数。
+            
+            
+
+* #### Vector
+
+    * 底层原理:
+
+        * Vector的数据结构和[ArrayList](http://www.cnblogs.com/skywang12345/p/3308556.html)差不多，它包含了3个成员变量：elementData , elementCount， capacityIncrement。
+        * 具体特点
+            * (01) elementData 是"Object[]类型的数组"，它保存了添加到Vector中的元素。elementData是个动态数组，如果初始化Vector时，没指定动态数组的>大小，则使用默认大小10。随着Vector中元素的增加，Vector的容量也会动态增长，capacityIncrement是与容量增长相关的增长系数，具体的增长方式，请参考源码分析中的ensureCapacity()函数。
+            * (02) elementCount 是动态数组的实际大小。
+            * (03) capacityIncrement 是动态数组的增长系数。如果在创建Vector时，指定了capacityIncrement的大小；则，每次当Vector中动态数组容量增加时>，增加的大小都是capacityIncrement。
+
+    * 特点与知识点
+
+        * 特点: 
+
+            * Vector 是**矢量队列**，它是JDK1.0版本添加的类。继承于AbstractList，实现了List, RandomAccess, Cloneable这些接口。
+            * Vector 继承了AbstractList，实现了List；所以，**它是一个队列，支持相关的添加、删除、修改、遍历等功能**。
+            * Vector 实现了RandmoAccess接口，即**提供了随机访问功能**。RandmoAccess是java中用来被
+            * List实现，为List提供快速访问功能的。在Vector中，我们即可以通过元素的序号快速获取元素对象；这就是快速随机访问。
+            * Vector 实现了Cloneable接口，即实现clone()函数。它能被克隆。
+            * 和ArrayList不同，**Vector中的操作是线程安全的**。
+
+            
+
+* #### HashSet
+
+    * 底层原理:
+
+        * 底层是一个Hashmap , set 的每一个值都是HashMap 的key , 所以不会重复, value 是一个
+
+            ```java
+            private static final Object PRESENT = new Object();
+            ```
+
+        * 实现了Set 接口
+
+        * HashSet没有提供get()方法，愿意是同HashMap一样，Set内部是无序的，只能通过迭代的方式获得
+
+    * 特点与知识点
+
+        * 很多方式和Hashmap一致 , 所以可以参考Hashmap
+
+* #### **LinkedHashSet**
+
+    * 原理:
+        * 同LinkedHashMap
+        * 有序的插入
+        
+        
+
+* #### **TreeSet**
+
+    * 原理:
+        * TreeSet中存放的元素是有序的（不是插入时的顺序，是有按关键字大小排序的），且元素不能重复。 
+            而如何实现有序存储，就需要有一个比较器，其实说起来，TreeSet更受关注的是不重复且有序，这个有序就需要有一个compare的过程，因此会需要参数实现Comparable接口。
+        
+        
+
+* #### Hashtable
+
+    * 底层原理:
+
+        * 底层数组+链表实现，无论key还是value都**不能为null**，线程**安全**，实现线程安全的方式是在修改数据时锁住整个HashTable，效率低，ConcurrentHashMap做了相关优化, 替代这个数据结构
+
+    * 特点与知识点
+
+        * 扩容:　
+
+            初始size为**11**，扩容：newsize = olesize*2+1
+
+        * 计算index的方法：
+
+            index = (hash & 0x7FFFFFFF) % tab.length
+        
+        
+
+* #### **HashMap**
+
+    * 底层原理:
+
+        * **利用key的hashCode重新hash计算出当前对象的元素在数组中的下标**
+        * **存储时，如果出现hash值相同的key，此时有两种情况。(1)如果key相同，则覆盖原始值；(2)如果key不同（出现冲突），则将当前的key-value放入链表中**
+        * **获取时，直接找到hash值对应的下标，在进一步判断key是否相同，从而找到对应值。**
+        * **理解了以上过程就不难明白HashMap是如何解决hash冲突的问题，核心就是使用了数组的存储方式，然后将冲突的key的对象放入链表中，一旦发现冲突就在链表中做进一步的对比。**
+
+    * 特点与知识点
+
+        * 概述:
+
+            1. HashMap是基于哈希表的Map接口的非同步实现。此实现提供所有可选的映射操作，并允许使用null值和null键。此类不保证映射的顺序，特别是它不保证该顺序恒久不变。HashMap实际上是一个“链表散列”的数据结构，即数组和链表的结合体。
+
+            2. 数组中每一个元素,都是一个Entry,每个 Map.Entry 其实就是一个key-value对，它持有一个指向下一个元素的引用，这就构成了链表。
+
+        * 存储和读取
+
+            1. hash(int h)方法根据key的hashCode重新计算一次散列,此算法加入了高位计算，防止低位不变，高位变化时，造成的hash冲突
+
+                ```java
+                        static int hash(int h) {
+                                 h ^= (h >>> 20) ^ (h >>> 12);
+                             return h ^ (h >>> 7) ^ (h >>> 4);
+                             }
+                ```
+        
+            2. put 方法的源代码可以看出，当程序试图将一个key-value对放入HashMap中时，程序首先根据该 key的 hashCode() 返回值决定该 Entry 的存储位置：如果两个 Entry 的 key 的 hashCode() 返回值相同，那它们的存储位置相同。如果这两个 Entry 的 key 通过 equals 比较返回 true，新添加 Entry 的 value 将覆盖集合中原有 Entry的 value，但key不会覆盖。如果这两个 Entry 的 key 通过 equals 比较返回 false，新添加的 Entry 将与集合中原有 Entry 形成 Entry 链，而且新添加的 Entry 位于 Entry 链的头部
+            3. 从HashMap中get元素时，首先计算key的hashCode，找到数组中对应位置的某一元素，然后通过key的equals方法在对应位置的链表中找到需要的元素。
+        
+        * 扩容
+        
+            * 初始容量16, HashMap的默认长度为16,是为了降低hash碰撞的几率
+            * 当hashmap中的元素越来越多的时候，碰撞的几率也就越来越高（因为数组的长度是固定的），所以为了提高查询的效率，就要对hashmap的数组进行扩容，数组扩容这个操作也会出现在ArrayList中，所以这是一个通用的操作，很多人对它的性能表示过怀疑，不过想想我们的“均摊”原理，就释然了，而在hashmap数组扩容之后，最消耗性能的点就出现了：原数组中的数据必须重新计算其在新数组中的位置，并放进去，这就是resize。
+            * 那么hashmap什么时候进行扩容呢？当hashmap中的元素个数超过数组大小*loadFactor时，就会进行数组扩容，loadFactor的默认值为0.75，也就是说，默认情况下，数组大小为16，那么当hashmap中元素个数超过16*
+            * 0.75=12的时候，就把数组的大小扩展为2x16=32，即扩大一倍，然后重新计算每个元素在数组中的位置，而这是一个非常消耗性能的操作，所以如果我们已经预知hashmap中元素的个数，那么预设元素的个数能够有效的提高hashmap的性能。比如说，我们有1000个元素new HashMap(1000), 但是理论上来讲new HashMap(1024)更合适，不过上面annegu已经说过，即使是1000，hashmap也自动会将其设置为1024。 但是new HashMap(1024)还不是更合适的，因为0.75*1000 < 1000, 也就是说为了让0.75 * size > 1000, 我们必须这样new HashMap(2048)才最合适，既考虑了&的问题，也避免了resize的问题。
+            
+            
+
+* #### TreeMap
+
+    * 原理:
+
+        * 基于红黑二叉树的NavigableMap的实现，线程非安全，不允许null，key不可以重复，value允许重复，存入TreeMap的元素应当实现Comparable接口或者实现Comparator接口，会按照排序后的顺序迭代元素，两个相比较的key不得抛出classCastException。主要用于存入元素的时候对元素进行自动排序，迭代输出的时候就按排序顺序输出
+        * 适用于按自然顺序或自定义顺序遍历键(key)。
+
+    * 特点
+
+        * HashMap的结果是没有排序的，而TreeMap输出的结果是排好序的。
+
+        * 默认自然排序
+
+            ![img](https://img-blog.csdn.net/20180320230650611?watermark/2/text/Ly9ibG9nLmNzZG4ubmV0L2RyYWdvbjkwMQ==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+
+        * *若要进行降序排序则需要在构造集合时候传递一个比较器*
+
+        
+
+* #### **Stack**
+
+    * 底层原理:
+      
+        * 经典的数据结构, 底层也是数组, 继承自Vector, 先进后出FILO, 默认new Stack()容量为10, 超出自动扩容.
+        
+        * 重点API
+        
+            执行**push**时(即，**将元素推入栈中**)，是通过将元素追加的数组的末尾中。
+            执行**peek**时(即，**取出栈顶元素，不执行删除**)，是返回数组末尾的元素。
+            执行**pop**时(即，**取出栈顶元素，并将该元素从栈中删除**)，是取出数组末尾的元素，然后将该元素从数组中删除。
+        
+    * 特点与知识点
+
+        * 继承自Vector  , 所有Vector拥有的特点, Stack 都拥有
+        
+        
+
+* #### **Queue**
+
+  * 底层原理
+  
+      * Queue是典型的先进先出容器，FIFO（first-in-first-out），通俗点说就，这个容器就像一个管道，从一端放入从另一端取出，放入的顺序和取出的顺序是相同的。
+  
+      * Queue是一个接口类，继承至Collection接口，与List、Set同属于Collection的子类Interface
+  
+      * Queue除了继承了Collection的接口外，自身拥有以下个接口：
+        
+          add ：往列队中添加一个元索，如果队列已满，则抛出一个IIIegaISlabEepeplian异常
+          
+          element：返回队列头部的元素，如果队列为空，则抛出一个NoSuchElementException异常
+          
+          offer：添加一个元素，成功返回true，如果队列已满，则返回false
+          
+          peek：返回队列头部的元素，如果队列为空，则返回null
+          
+          poll：移除并返回队列头部的元素，如果队列为空，则返回null
+          
+          remove：移除并返回队列头部的元素，如果队列为空，则抛出一个NoSuchElementException异常
+          
+      * Queue 的子类:
+  
+        ![9e83d76d5540d62fc6b7f4a5ea10f904b7e.jpg](https://oscimg.oschina.net/oscnet/9e83d76d5540d62fc6b7f4a5ea10f904b7e.jpg)
+        
+        * AbstarctQueue
+        * BlockingQueue
+        * Deque
+        * ConcurrentLinkedQueue
+  
+  * 特点与知识点
+  
+    * 阻塞队列概念:
+  
+      * 当队列里面是空的时候, 从队列里取的操作,将被阻塞
+      * 当队列满的时候, 向队列里放的操作,将被阻塞
+      
+    * 阻塞队列与非阻塞队列的分类:
+    
+        * 阻塞列队：
+    
+            - ArrayBlockingQueue：基于数组的并发阻塞队列，继承自AbstractQueue，实现了BlockingQueue接口
+            - SynchronousQueue ：并发同步阻塞队列，继承自AbstractQueue，实现了BlockingQueue接口
+            - DelayQueue：延期阻塞队列，继承自AbstractQueue，实现了BlockingQueue接口
+            - LinkedBlockingQueue：基于链表的FIFO阻塞队列，继承自AbstractQueue，实现了BlockingQueue接口
+            - LinkedBlockingDeque：基于链表的FIFO双端阻塞队列，继承自AbstractQueue，实现了BlockingQueue接口
+            - PriorityBlockingQueue:：带优先级的无界阻塞队列，继承自AbstractQueue，实现了BlockingQueue接口
+        
+        * 非阻塞列队：
+    
+           - ConcurrentLinkedQueue：基于链表的并发队列，继承自AbstractQueue，实现了Queue接口
+          - PriorityQueue：带优先级的无界队列，继承自AbstractQueue，实现了BlockingQueue接
+            - ArrayDeque,：数组双端队列，继承自AbstractCollection，实现了Deque接口
+        
+    * **重点方法区别**
+    
+        **offer & add区别**
+        一些队列有大小限制，如果想在容量满了的队列中加入元素，会被拒绝。
+    
+        offer()方法将一个元素插入队尾，成功返回true，失败返回false，一般在queue容量有限制并且满员的情况下会插入失败；
+    
+        add()方法将一个元素插入队尾，queue容量如果满了，插入将会失败，失的时候会抛出异常；
+    
+        **peek & element区别**
+        element() 和 peek() 都是在不移除元素的情况下返回列队头部元素。
+    
+        在队列为空的情况下 peek() 返回 null，而element() 将抛出NoSuchElementException异常
+    
+        **poll & remove区别**
+        remove() 和 poll() 方法都移除并返回队列头部元素（head）。
+    
+        poll() 方法在集合为空的时候返回 null，remove() 则抛出NoSuchElementException异常
+        
+        
+    
+  
+* #### **Android 中的数据结构**
+
+    * ArraySet
+* ArrayMap
+    
+    * SparseArray
+* Pair
+
+
+
+
+
+### 相关问题：
+
+**ArrayList 和LinkedList 的区别**
+
+**Arraylist 和 Vector 的区别**
+
+**各种list 的使用场景**
+
+https://www.cnblogs.com/skywang12345/p/3308900.html
+
+**hashmap 和 hashtable 的区别**
+
+https://www.cnblogs.com/heyonggang/p/9112731.html
+
+**hash 冲突的解决**
+
+* 通常有两类方法处理碰撞：开放寻址(Open Addressing)法和链接(Chaining)法。
+    * 开放寻址
+    * 链接
+
+**Java中的hashCode和equals**
+
+* HashCode 的概念:
+
+    1. hashCode的存在主要是用于查找的快捷性，如Hashtable，HashMap等，hashCode是用来在散列存储结构中确定对象的存储地址的
+    2. 如果两个对象相同，就是适用于equals(java.lang.Object) 方法，那么这两个对象的hashCode一定要相同
+    3. 如果对象的equals方法被重写，那么对象的hashCode也尽量重写，并且产生hashCode使用的对象，一定要和equals方法中使用的一致，否则就会违反上面提到的第2点
+    4. 两个对象的hashCode相同，并不一定表示两个对象就相同，也就是不一定适用于equals(java.lang.Object) 方法，只能够说明这两个对象在散列存储结构中，如Hashtable，他们“存放在同一个篮子里“
+
+    **再归纳一下就是hashCode是用于查找使用的，而equals是用于比较两个对象的是否相等的。**
+
+* **关于equals**
+
+    1. equals和==
+        ==用于比较引用和比较基本数据类型时具有不同的功能：
+        比较基本数据类型，如果两个值相同，则结果为true
+        而在比较引用时，如果引用指向内存中的同一对象，结果为true;
+
+        equals()作为方法，实现对象的比较。由于==运算符不允许我们进行覆盖，也就是说它限制了我们的表达。因此我们复写equals()方法，达到比较对象内容是否相同的目的。而这些通过==运算符是做不到的。
+
+    2. object类的equals()方法的比较规则为：如果两个对象的类型一致，并且内容一致，则返回true,这些类有：
+        java.io.file,java.util.Date,java.lang.string,包装类（Integer,Double等）
+        String s1=new String("abc");
+        String s2=new String("abc");
+        System.out.println(s1==s2);
+        System.out.println(s1.equals(s2));
+        运行结果为false true
+
+
+
+## 多线程以及线程池
+
+### 多线程知识点
+
+#### 线程排序方法:
+
+#### 1. countdownlatch
 
 作减法 , 例如,开始启动了 6 个线程, 
 
@@ -18,7 +404,7 @@ countdownlatch.wait();
 
 
 
-#### CyclicBarrier
+#### 2. CyclicBarrier
 
 作加法 , 
 
@@ -31,7 +417,7 @@ cylicBarrier.wait()
 
 
 
-#### Semaphore
+#### 3. Semaphore
 
 ```java
 final Semaphore semaphore = new Semaphore(3); // 模拟3个车位
@@ -50,37 +436,27 @@ final Semaphore semaphore = new Semaphore(3); // 模拟3个车位
 
 
 
+### 线程池
 
 
-### 阻塞队列
 
-1. 阻塞队列概念:
 
-    * 当队列里面是空的时候, 从队列里取的操作,将被阻塞
-    * 当队列满的时候, 向队列里放的操作,将被阻塞
-
-    
-
-2. BlockQueue: 7 个实现类,常用的3个
-
-    * ArrayBlockQueue
-    * 
-
-生产者, 消费者模式:
-
- 两个线程, 一个生产, 一个消费 , 三个重点: synchronized , wait , notify
 
 ## 锁
+
+#### 锁问题常见口诀
 
 1. 多个线程, 操作资源类, 高内聚, 低耦合
 2. 判断,  干活, 通知
 3. 预防虚假唤醒 , 线程的等待, 需要使用while
 
-铁三角:
+#### 生产者, 消费者模式:
 
-sync -------------- wait --------------- notify
+ 两个线程, 一个生产, 一个消费 , 三个重点: synchronized , wait , notify
 
-lock --------------- await ------------- singal
+第一代 :   sync -------------- wait --------------- notify
+
+第二代:    lock --------------- await ------------- singal
 
 
 
@@ -88,7 +464,29 @@ lock --------------- await ------------- singal
 
 #### 锁的分类
 
-Synchronized  和 Lock 的区别, LOCK的优点?
+##### 问：简单说说你所了解的 Java 锁分类和特点有哪些？
+
+**答：**其实对于 Java 锁的分类没有严格意义的规则，我们常说的分类一般都是依据锁的特性、锁的设计、锁的状态等进行归纳整理的，所以常见的分类如下：
+
+- **公平锁、非公平锁：**公平锁指多个线程按照申请锁的顺序来获取锁，非公平锁就是没有顺序完全随机，所以能会造成优先级反转或者饥饿现象；**synchronized 就是非公平锁，ReentrantLock（使用 CAS 和 AQS 实现） 通过构造参数可以决定是非公平锁还是公平锁，默认构造是非公平锁；非公平锁的吞吐量性能比公平锁大好。**
+- **可重入锁：**又名递归锁，**指在同一个线程在外层方法获取锁的时候在进入内层方法会自动获取锁，**synchronized 和 ReentrantLock 都是可重入锁，可重入锁可以在一定程度避免死锁。
+- **独享锁、共享锁：**独享锁是指该锁一次只能被一个线程持有，共享锁指该锁可以被多个线程持有；**synchronized 和 ReentrantLock 都是独享锁，ReadWriteLock 的读锁是共享锁，写锁是独占锁；**ReentrantLock 的独享锁和共享锁也是通过 AQS 来实现的。
+- **互斥锁、读写锁：**其实就是独享锁、共享锁的具体说法；互斥锁实质就是 ReentrantLock，读写锁实质就是 ReadWriteLock。
+- **乐观锁、悲观锁：**这个分类不是具体锁的分类，而是看待并发同步的角度；**悲观锁认为对于同一个数据的并发操作一定是会发生修改的（哪怕实质没修改也认为会修改），因此对于同一个数据的并发操作，悲观锁采取加锁的形式，因为悲观锁认为不加锁的操作一定有问题；乐观锁则认为对于同一个数据的并发操作是不会发生修改的，在更新数据的时候会采用不断的尝试更新，乐观锁认为不加锁的并发操作是没事的；**由此可以看出悲观锁适合写操作非常多的场景，乐观锁适合读操作非常多的场景，不加锁会带来大量的性能提升，悲观锁在 java 中很常见，乐观锁其实就是基于 CAS 的无锁编程，譬如 java 的原子类就是通过 CAS 自旋实现的。
+- **分段锁：**实质是一种锁的设计策略，不是具体的锁，对于 ConcurrentHashMap 而言其并发的实现就是通过分段锁的形式来实现高效并发操作；当要 put 元素时并不是对整个 hashmap 加锁，而是先通过 hashcode 知道它要放在哪个分段，然后对分段进行加锁，所以多线程 put 元素时只要放在的不是同一个分段就做到了真正的并行插入，但是统计 size 时就需要获取所有的分段锁才能统计；分段锁的设计是为了细化锁的粒度。
+- **偏向锁、轻量级锁、重量级锁：**这种分类是按照锁状态来归纳的，并且是针对 synchronized 的，java 1.6 为了减少获取锁和释放锁带来的性能问题而引入的一种状态，其状态会随着竞争情况逐渐升级，**锁可以升级但不能降级，意味着偏向锁升级成轻量级锁后无法降为偏向锁，这种升级无法降级的策略目的就是为了提高获得锁和释放锁的效率。**
+- **自旋锁：**其实是相对于互斥锁的概念，互斥锁线程会进入 WAITING 状态和 RUNNABLE 状态的切换，涉及上下文切换、cpu 抢占等开销，**自旋锁的线程一直是 RUNNABLE 状态的，一直在那循环检测锁标志位，机制不重复，但是自旋锁加锁全程消耗 cpu，起始开销虽然低于互斥锁，但随着持锁时间加锁开销是线性增长。**
+- **可中断锁：**synchronized 是不可中断的，Lock 是可中断的，这里的可中断建立在阻塞等待中断，运行中是无法中断的。
+
+
+
+
+
+
+
+#### 常见问题
+
+##### Synchronized  和 Lock 的区别, LOCK的优点?
 
 > 原始构成
 
@@ -176,7 +574,7 @@ class ThreadTest implements Runnable {
 
 
 
-## 线程池
+
 
 ## JVM
 
@@ -231,7 +629,7 @@ class ThreadTest implements Runnable {
 
             
 
-    * 
+        
 
 * **Java堆**
 
