@@ -4,7 +4,7 @@
 
 ## 1. 数据结构与算法
 
-[常用数据结构与算法](./数据结构与算法.md)
+[常用数据结构与算法](./sjjg/数据结构与算法.md)
 
 ---
 
@@ -14,45 +14,13 @@
 
 ## 3. Java基础知识
 
-1. 线程
-
-2. 内部类
-
-3. 泛型
-
-4. 
-
-5. RefrenecesQueue
-
-     
+  [Java知识点](./Java/java高级.md)
 
 ---
 
 ## 4. 设计模式
 
-### 4.1 关于复杂度
-
-### 4.2 单例模式
-
-懒汉式
-
-饿汉式
-
-完整式
-
-内部类的形式
-
-### 4.3  Builder 模式
-
-### 4.4  Adapter 模式
-
-### 4.5  工厂模式
-
-### 4.6  观察者模式
-
-### 4.7  装饰者模式
-
-
+[设计模式](./sjms/设计模式.md)
 
 ---
 
@@ -211,6 +179,8 @@
 
 * IPC 知识点
 
+  [深入了解IPC](./IPC.md)  
+
 
 
 
@@ -287,11 +257,7 @@
 
 
 
-
-
-
-
-
+#####
 
 
 
@@ -312,6 +278,8 @@
 
         
 
+#####
+
 
 
 ### 5.5 Android 中的存储方式
@@ -325,11 +293,19 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 
 
+#####
+
+
+
 ### 5.6 Android 中的相机与相册
 
 * 调用Android中的照片
 
     [Android 相机相册调用](./Android_Camera & Gallery.md)
+    
+    
+
+#####
 
 
 
@@ -338,6 +314,12 @@ Android 中原生的存储方式主要有以下几种常用方式
 * Android 中的序列化
 
     [Android 中的序列化](./Android序列化.md)
+
+
+
+#####
+
+
 
 ### 5.10 Android 的细节注意点
 
@@ -351,9 +333,12 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 4. AOP
 
-      
 
-===
+
+
+#####
+
+
 
 ---
 
@@ -370,8 +355,6 @@ Android 中原生的存储方式主要有以下几种常用方式
         [启动问题](https://github.com/huannan/AndroidReview/blob/master/Android.md)
 
 * **应用安装包Size 的裁剪**
-
-* **APK 的瘦身**
 
 * **应用的多机型适配**
 
@@ -425,7 +408,7 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 ### 6.3 Android 的开源框架
 
-- 注解ICO框架
+- 注解IOC框架
 
 - 网络OKHttp 框架
 
@@ -472,11 +455,7 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 ### 6.5 Android 运行原理
 
-* **Android 的开机过程**
-* **Android 的启动流程**
-* **Android 的打包流程**
-* **Android 的分包原理**
-* **APK 的安装流程**
+[Android运行原理](./Android 的各种过程.md)
 
 ---
 
@@ -485,7 +464,6 @@ Android 中原生的存储方式主要有以下几种常用方式
 ### 6.6 Android 前沿知识点
 
 * 热修复
-* Kotlin
 * Rxjava+Retrofit
 * git
 * gradle
@@ -493,11 +471,15 @@ Android 中原生的存储方式主要有以下几种常用方式
 
 ---
 
+
+
 ### 6.7 Android 推送方案
 
 https://www.cnblogs.com/Joanna-Yan/p/6241354.html
 
 ---
+
+
 
 ### 6.8 Android 的零碎知识点
 
@@ -508,9 +490,7 @@ https://www.cnblogs.com/Joanna-Yan/p/6241354.html
 * Android 5.0 6.0 7.0 8.0 9.0 的特性
 * Dalvik 与 ART 的区别
 
----
 
-### 6.9 Kotlin
 
 ---
 
@@ -525,7 +505,7 @@ https://www.cnblogs.com/Joanna-Yan/p/6241354.html
 ### 8.1 项目总结
 
 * 多渠道打包
-* 
+* gradle 的细节
 
 ### 8.2 面试技巧
 
@@ -543,4 +523,9 @@ https://www.cnblogs.com/Joanna-Yan/p/6241354.html
 
 * 关于测试
 
-* 
+
+
+
+## 9 Kotlin
+
+[Kotlin相关知识点](./Kotlin.md)
