@@ -31,9 +31,13 @@ Map
 
 
 
-#### 图示:
+**图示:**
 
 ![img](https://img-blog.csdnimg.cn/20190514164943406.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zNjM3ODkxNw==,size_16,color_FFFFFF,t_70)
+
+
+
+
 
 #### 数据结构细节分析
 
@@ -169,6 +173,12 @@ Map
         * 计算index的方法：
 
             index = (hash & 0x7FFFFFFF) % tab.length
+            
+        * **问题:**
+        
+            * 大锁:对HashTable 的对象加锁
+            * 直接对方法加锁
+            * 读写锁共用:只有一把锁,从头锁到尾
         
         
 
@@ -329,10 +339,53 @@ Map
 * #### **Android 中的数据结构**
 
     * ArraySet
-* ArrayMap
-    
+    * ArrayMap
     * SparseArray
-* Pair
+    * Pair
+
+
+
+### JUC 的相关数据结构
+
+java.util.concurrent
+
+#### ConcurrentHashMap
+
+* 场景：
+  
+* ConcurrentHashMap推荐应用场景 多线程对HashMap数据添加删除操作时，可以采用ConcurrentHashMap。
+  
+* 原理:
+
+    > 分段锁的hash 优化, 分段均匀的分布在各个位置
+    >
+    > JDK1.5 对3万多一下的hash(key) 的高位得到的hash 值很接近, 3万到十几万的分布也很接近
+    >
+    > JDK1.6 对hash 算法进行的优化
+    >
+    > JDK5 小整数的HASH高位始终是 15 , JDK高低位均匀分布
+    >
+    > JDK 7 :分段锁懒加载,不会一开始就初始化了 HashMap 的16个位置, 而是用的时候才使用, getObjectVolatile
+    >
+    > JDK8 :直接使用getObjectVolatile　来访问table 而不是segment , 加锁只针对table 里面的entry 所以JDK8 使用的就不再是分段加锁的方式
+
+* CHM 如何计数
+    * JDK 5-7 基于段元素个数求和,二次不同就加锁
+    * JDK8 引入了CounterCell 本质上也是分段计数
+
+* CHM 的弱一致性
+    * 添加元素后不一定马上就能读取到
+    * 清空元素后可能仍然会有元素
+    * 遍历之前的段元素的变化会读到
+    * 遍历之后的段元素的变化读取不到
+    * 遍历时段元素发生变化不抛异常
+
+* CHM 的解法:
+    * 小锁: 分段锁(5-7) , 桶节点锁(8)
+    * 短锁: 先尝试获取, 失败了在加锁
+    * 分离读写锁:读失败在加锁(5-7) , volatile读ＣＡＳ写(7-8)
+
+    
 
 
 
@@ -342,7 +395,17 @@ Map
 
 **ArrayList 和LinkedList 的区别**
 
+1. ArrayList是实现了基于动态数组的数据结构，LinkedList基于链表的数据结构。 
+2.  对于随机访问get和set，ArrayList觉得优于LinkedList，因为LinkedList要移动指针。 
+3. 对于新增和删除操作add和remove，LinedList比较占优势，因为ArrayList要移动数据。 
+
+
+
 **Arraylist 和 Vector 的区别**
+
+
+
+
 
 **各种list 的使用场景**
 
@@ -444,23 +507,11 @@ final Semaphore semaphore = new Semaphore(3); // 模拟3个车位
 
 ## 锁
 
-#### 锁问题常见口诀
-
-1. 多个线程, 操作资源类, 高内聚, 低耦合
-2. 判断,  干活, 通知
-3. 预防虚假唤醒 , 线程的等待, 需要使用while
-
-#### 生产者, 消费者模式:
-
- 两个线程, 一个生产, 一个消费 , 三个重点: synchronized , wait , notify
-
-第一代 :   sync -------------- wait --------------- notify
-
-第二代:    lock --------------- await ------------- singal
+### 锁的优化
 
 
 
-
+### 锁的应用
 
 #### 锁的分类
 
@@ -484,7 +535,25 @@ final Semaphore semaphore = new Semaphore(3); // 模拟3个车位
 
 
 
-#### 常见问题
+#### 锁问题常见口诀
+
+1. 多个线程, 操作资源类, 高内聚, 低耦合
+2. 判断,  干活, 通知
+3. 预防虚假唤醒 , 线程的等待, 需要使用while
+
+#### 生产者, 消费者模式:
+
+ 两个线程, 一个生产, 一个消费 , 三个重点: synchronized , wait , notify
+
+第一代 :   sync -------------- wait --------------- notify
+
+第二代:    lock --------------- await ------------- singal
+
+
+
+
+
+### 常见问题
 
 ##### Synchronized  和 Lock 的区别, LOCK的优点?
 
@@ -855,40 +924,82 @@ Object obj = new Object();
 
 ## 其他知识点
 
-### String
+#### 使用合适的数据结构
 
-* intern 方法
+HaspMap VS ArrayMap
 
-    String类中加入这个方法可能是为了提升一点点性能，因为从常量池取数据比从堆里面去数据要快一些。(个人感觉)
+元素大于1000 个 Haspmap
 
-    　　API上的那几句关于这个方法，其实总结一句就是调用这个方法之后把字符串对象加入常量池中，常量池我们都知道他是存在于方法区的，他是方法区的一部分，而方法区是线程共享的，所以常量池也就是线程共享的，但是他并不是线程不安全的，他其实是线程安全的，他仅仅是让有相同值的引用指向同一个位置而已，如果引用值变化了，但是常量池中没有新的值，那么就会新开辟一个常量结果来交给新的引用，而并非像线程不同步那样，针对同一个对象，new出来的字符串和直接赋值给变量的字符串存放的位置是不一样的，前者是在堆里面，而后者在常量池里面，另外，在做字符串拼接操作，也就是字符串相"+"的时候，得出的结果是存在在常量池或者堆里面，这个是根据情况不同不一定的，我写了几行代码测试了一下。
+如何Key 是整型可以采用SparseArray , 这可以避免过多的装箱和拆箱
 
-    　　先上结果：
+如何key 不是整型可以采用ArrayMap 
 
-    　　　　1.直接定义字符串变量的时候赋值，如果表达式右边只有字符串常量，那么就是把变量存放在常量池里面。
+**ArrayMap的特点:**
 
-    　　　　2.new出来的字符串是存放在堆里面。
+* 2分查找
 
-    　　　　3.对字符串进行拼接操作，也就是做"+"运算的时候，分2中情况：
+* 查询0(logN)
+* 插入O(logN)
+* 1.5倍的扩容
+* 0.5倍的缩容
+* 无额外的对象开销(没有Entry)
+* 小数组复用池(Map 先会创建一个数组)
 
-    　　　　　　i.表达式右边是纯字符串常量，那么存放在栈里面。
+**HashMap 的特点:**
 
-    　　　　　　ii.表达式右边如果存在字符串引用，也就是字符串对象的句柄，那么就存放在堆里面。
+* 查询O(1)
+* 插入O(1)
+* 2倍的扩容
+* 无容缩机制
+* 额外的Entry对象
 
-    ```
-    　　　　String str1 = "aaa";
-            String str2 = "bbb";
-            String str3 = "aaabbb";
-            String str4 = str1 + str2;
-            String str5 = "aaa" + "bbb";
-            System.out.println(str3 == str4); // false
-            System.out.println(str3 == str4.intern()); // true
-            System.out.println(str3 == str5);// true
-    ```
 
-    　　结果：str1、str2、str3、str5都是存在于常量池，str4由于表达式右半边有引用类型，所以str4存在于堆内存，而str5表达式右边没有引用类型，是纯字符串常量，就存放在了常量池里面。其实Integer这种包装类型的-128  ~ +127也是存放在常量池里面，比如Integer i1 = 10;Integer i2 = 10; i1 ==  i2结果是true，估计也是为了性能优化。
 
-* 其他方法
+避免使用枚举
+
+* 一个枚举 24Bytes
+
+* 一个int 4Bytes
+
+
+
+手动写一个Handler
+
+手动写一个图片加载工具
+
+图片大小 *　屏幕密度　/　densityDPI
+
+图片加载流程：
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

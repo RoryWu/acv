@@ -52,6 +52,7 @@ Android的UI控件不是线程安全的，如果在多线程中访问UI控件则
 - Handler内部持有外部Activity的弱引用
 - Handler改为静态内部类
 - 在适当时机移除Handler的所有Callback()
+- 原理：**静态类不持有外部类的对象，所以你的Activity可以随意被回收。由于Handler不再持有外部类对象的引用，导致程序不允许你在Handler中操作Activity中的对象了。所以你需要在Handler中增加一个对Activity的弱引用（WeakReference）。**
 
 #### 
 
@@ -114,10 +115,219 @@ void checkThread() {
 
 #### 
 
-#### 7. 参考文章
+#### 7. 手写一个handler
 
-[Android 源码分析之旅3.1--消息机制源码分析](https://www.jianshu.com/p/ac50ba6ba3a2)
+**Handler**
 
-[android消息机制原理详解](https://blog.csdn.net/ouyangfan54/article/details/55006558)
+```java
+public class Handler {
+    private Looper mLooper;
+    private MessageQueue mQueue;
 
-[Android中Handler的使用](https://blog.csdn.net/iispring/article/details/47115879)
+    public Handler() {
+        //获取当前线程的looper
+        mLooper = Looper.myLooper();
+        //获取当前线程的消息列队
+        mQueue = mLooper.messageQuene;
+    }
+
+    /**
+     * 发送消息
+     * @param message
+     */
+    public void sendMessage(Message message) {
+        message.target = this;
+        mQueue.enqueueMessage(message);
+    }
+
+    /**
+     * 处理消息
+     * @param message
+     */
+    public void handleMessage(Message message) {
+
+    }
+
+    /**
+     * 分发消息
+     * @param message
+     */
+    public void dispatchMessage(Message message) {
+        handleMessage(message);
+    }
+}
+```
+
+
+
+**Looper**
+
+```java
+public class Looper {
+    final MessageQueue messageQuene;
+    private static ThreadLocal<Looper> threadLocal = new ThreadLocal<>();
+
+    private Looper() {
+        messageQuene = new MessageQueue();
+    }
+
+    /**
+     * 为当前线程初始化一个looper副本对象
+     */
+    public static void prepare() {
+        if (threadLocal.get() != null) {
+            throw new RuntimeException("Only one Looper may be created per thread");
+        }
+        threadLocal.set(new Looper());
+        System.out.println("looper初始化");
+    }
+
+    /**
+     * 获取当前线程的looper副本对象
+     *
+     * @return
+     */
+    public static Looper myLooper() {
+        return threadLocal.get();
+    }
+
+    /**
+     * 轮询消息
+     */
+    public static void loop() {
+        //获取当前线程的looper对象
+        Looper me = myLooper();
+        Message msg;
+        //开始轮询消息
+        for (; ; ) {
+            //轮询消息，没有消息就阻塞
+            msg = me.messageQuene.next();
+            if (msg == null || msg.target == null) {
+                System.out.println("Looper：" + "空消息");
+                continue;
+            }
+            System.out.println("Looper：" + "looper轮询到了消息，发送消息");
+            //轮询到了消息分发消息
+            msg.target.dispatchMessage(msg);
+
+        }
+    }
+}
+```
+
+
+
+**Message**
+
+```java
+public class Message {
+    
+    //发送的消息
+    public Object obj;
+
+    //目标Handler
+    public Handler target;
+
+    @Override
+    public String toString() {
+        return obj.toString();
+    }
+}
+```
+
+
+
+
+
+**MessageQueue**
+
+```java
+// 要实现生产者／消费者模型，首先的有锁，这里使用ReentrantLock主要考虑的重写入，它可以根据设定的变量来唤醒不同类型的锁，也就是说当我们队列有数据时，我们需要唤醒read锁；当队列有空间时，我们需要唤醒写锁。
+
+public class MessageQueue {
+
+    Message[] mItems;
+    int mPutIndex;
+    //队列中消息数
+    private int mCount;
+    private int mTakeIndex;
+    //锁
+    Lock mLock;
+    //唤醒，沉睡某个线程操作
+    Condition getCondition;//可取
+    Condition addCondition;//可添加
+
+
+    public MessageQueue() {
+        mItems = new Message[50];
+        mLock = new ReentrantLock();
+        getCondition = mLock.newCondition();
+        addCondition = mLock.newCondition();
+    }
+
+    /**
+     * 消息队列取消息 出队
+     *
+     * @return
+     */
+    Message next() {
+        Message msg = null;
+        try {
+            mLock.lock();
+            //检查队列是否空了
+            while (mCount <= 0) {
+                //阻塞
+                System.out.println("MessageQueue：" + "队列空了，读锁阻塞");
+                getCondition.await();
+            }
+            msg = mItems[mTakeIndex];//可能空
+            //消息被处理后，置空数组中该项
+            mItems[mTakeIndex] = null;
+            //处理越界，index大于数组容量时，取第一个item
+            mTakeIndex = (++mTakeIndex >= mItems.length) ? 0 : mTakeIndex;
+            mCount--;
+            //通知生产者生产
+            addCondition.signalAll();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            mLock.unlock();
+        }
+
+        return msg;
+    }
+
+    /**
+     * 添加消息进队列
+     *
+     * @param message
+     */
+
+    public void enqueueMessage(Message message) {
+
+        try {
+            mLock.lock();
+            //检查队列是否满了
+            while (mCount >= mItems.length) {
+                //阻塞
+                System.out.println("MessageQueue：" + "队列空了，写锁阻塞");
+                addCondition.await();
+            }
+
+            mItems[mPutIndex] = message;
+            //处理越界，index大于数组容量时，替换第一个item
+            mPutIndex = (++mPutIndex >= mItems.length) ? 0 : mPutIndex;
+            mCount++;
+            //通知消费者消费
+            getCondition.signalAll();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            mLock.unlock();
+        }
+    }
+}
+```
+
+
+
